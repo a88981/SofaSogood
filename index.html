@@ -63,6 +63,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15
 .header-status{padding:0 14px 8px;}
 .header-status:empty{display:none;}
 .status-bar{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:12px;width:100%;}
+.status-bar+.status-bar{margin-top:4px;}
 .status-bar.pass{background:var(--pass-bg);color:var(--pass-c);}
 .status-bar.warn{background:var(--warn-bg);color:var(--warn-c);}
 .status-bar.limit{background:var(--err-bg);color:var(--err-c);}
@@ -101,6 +102,12 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15
 .pass-detail{font-size:12px;opacity:.8;margin-top:2px;}
 
 /* NOBLE CARRY */
+.carry-box{background:linear-gradient(135deg,#FBECEA,#F6DEDA);border:1.5px solid #C0503C;border-radius:var(--radius);padding:12px 14px;display:flex;flex-direction:column;gap:10px;color:#A03020;}
+.carry-title{font-size:14px;font-weight:600;display:flex;flex-wrap:wrap;align-items:center;gap:8px;}
+.carry-state{font-size:12px;font-weight:400;opacity:.85;}
+.carry-type{padding:6px 14px;border-radius:20px;border:1.5px solid rgba(160,48,32,.3);background:transparent;color:#A03020;font-size:12px;cursor:pointer;}
+.carry-type.active{background:#C0503C;border-color:#C0503C;color:#fff;}
+.carry-cancel{align-self:flex-start;padding:5px 12px;border-radius:14px;border:1px solid rgba(160,48,32,.3);background:transparent;color:#A03020;font-size:12px;cursor:pointer;}
 .noble-carry{background:var(--noble-bg);border:1px solid rgba(128,96,16,.2);border-radius:var(--radius);padding:8px 12px;font-size:13px;color:var(--noble-c);display:flex;align-items:center;gap:6px;}
 
 /* ROUND LOG */
@@ -376,6 +383,7 @@ function nobleGiftType(r) {
 }
 // 這一輪對手牌貢獻的訊息牌種；不是訊息牌回傳 null
 function infoTypeOf(r) {
+  if (r.fromCarry) return (INFO_CELLS.includes(r.cellType) && r.cardName) ? r.cellType : null;
   if (isExtraNoble(r)) { const t = nobleGiftType(r); return (INFO_CELLS.includes(t) && r.cardName) ? t : null; }
   if (r.cellType === 'golden') return r.goldenCardType || 'golden'; // 黃金格看實際抽到的牌種
   return INFO_CELLS.includes(r.cellType) ? r.cellType : null;
@@ -409,6 +417,13 @@ function activeInfoRolls(rolls, exceptId) {
   const gone = releasedNames(rolls, exceptId);
   return rolls.filter(r => isInfoRoll(r) && !(r.cardName && gone.includes(r.cardName)));
 }
+// 上一關帶來、已經拿去換成訊息牌的貴人卡張數
+function usedCarryCount(player, phase) {
+  const carry = player.nobleCarry[phase] || 0;
+  const used = player.phases[phase].filter(r => r.fromCarry && r.cardName && r.carryIndex < carry).length;
+  return Math.min(carry, used);
+}
+
 // 手牌依操作步驟排序：每一輪拿到什麼就放在那個位置
 function handItemsInOrder(rolls) {
   const handIds = new Set(activeInfoRolls(rolls).map(r => r.id));
@@ -496,20 +511,9 @@ function calcPassStatus(player, phase) {
   // 放下卡：放下格子、附加貴人給的放下；執行：附加「放下」選了牌
   const { cards: releaseCards, pending: pendingRelease } = releaseCounts(rolls);
 
-  // 有未執行的放下卡 → 不能過關
-  if (pendingRelease > 0) {
-    const infoCards = activeInfoRolls(rolls);
-    return {
-      canPass: false, blocked: true, pendingRelease,
-      infoCount: infoCards.length, has3Types: false, hasNoble: false,
-      missing: [], atLimit: infoCards.length >= 9, totalNobles: 0,
-      passA: false, passB: false,
-    };
-  }
-
   const infoCards = activeInfoRolls(rolls);
   const nobles = rolls.filter(isNobleCard).length;
-  const nobleCarry = player.nobleCarry[phase] || 0;
+  const nobleCarry = (player.nobleCarry[phase] || 0) - usedCarryCount(player, phase);
   const totalNobles = nobles + nobleCarry;
 
   const hasTarot = infoCards.some(r => cardGroupOf(r) === 'tarot');
@@ -524,7 +528,9 @@ function calcPassStatus(player, phase) {
   const passA = has3Types && hasNoble;
   // 方式B：7張訊息卡（任意）+ 貴人卡
   const passB = infoCount >= 7 && hasNoble;
-  const canPass = passA || passB;
+  // 有未執行的放下卡 → 先不能過關，但其餘條件照樣計算
+  const blocked = pendingRelease > 0;
+  const canPass = (passA || passB) && !blocked;
 
   const missing = [];
   if (!hasTarot) missing.push('塔羅牌');
@@ -545,14 +551,14 @@ function calcPassStatus(player, phase) {
     }
   }
 
-  return { canPass, passA, passB, blocked: false, pendingRelease: 0,
+  return { canPass, passA, passB, blocked, pendingRelease,
     infoCount, has3Types, hasNoble, missing, atLimit, totalNobles, releaseHint };
 }
 
 function calcNobleCarryForward(player, phase) {
   const rolls = player.phases[phase];
   const nobles = rolls.filter(isNobleCard).length;
-  const carry  = player.nobleCarry[phase] || 0;
+  const carry  = (player.nobleCarry[phase] || 0) - usedCarryCount(player, phase);
   const used   = (nobles + carry) >= 1 ? 1 : 0;
   return Math.max(0, nobles + carry - used);
 }
@@ -883,7 +889,9 @@ function applyPlayerSwitch(id) {
   currentPlayerId = id;
   const player = getPlayer();
   syncPhaseProgress(player);
-  if (player) {
+  if (player && player.stayPhase) {
+    currentPhase = player.stayPhase; // 過關後選了「繼續抽牌」
+  } else if (player) {
     if (!player.phaseDone['body']) currentPhase = 'body';
     else if (!player.phaseDone['mind']) currentPhase = 'mind';
     else if (!player.phaseDone['spirit']) currentPhase = 'spirit';
@@ -902,6 +910,8 @@ function switchPlayer(id) {
 
 // ── PHASE ──
 function setPhase(phase) {
+  const sp = getPlayer();
+  if (sp && sp.stayPhase && phase !== sp.stayPhase) sp.stayPhase = null;
   currentPhase = phase;
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   const tabEl = document.getElementById('tab-'+phase);
@@ -924,7 +934,7 @@ function renderPhaseContent() {
       const s = calcPassStatus(player, ph);
       const active = ph === currentPhase ? 'active '+ph : '';
       const done = player.phaseDone[ph] ? 'done' : '';
-      const cnt = player.phases[ph].filter(r => INFO_CELLS.includes(r.cellType)).length;
+      const cnt = player.phases[ph].filter(isInfoRoll).length;
       return `<div class="phase-chip ${ph} ${active} ${done}" onclick="setPhase('${ph}')">
         <div class="pc-name">${PHASE_NAMES[ph]}</div>
         <div class="pc-count">${cnt} 張訊息卡</div>
@@ -952,7 +962,25 @@ function renderPhaseContent() {
   const status = calcPassStatus(player, currentPhase);
   const carryIn = player.nobleCarry[currentPhase] || 0;
   if (carryIn > 0) {
-    html += `<div class="noble-carry">⭐ 從上一關帶來 ${carryIn} 張貴人卡，可抵訊息卡使用</div>`;
+    const CARRY_BTNS = [
+      {key:'tarot',label:'探索'},{key:'tarot-minor',label:'真相'},
+      {key:'guide',label:'指引'},{key:'issue',label:'議題'},
+    ];
+    for (let ci = 0; ci < carryIn; ci++) {
+      const cr = rolls.find(r => r.fromCarry && r.carryIndex === ci);
+      const ct = cr ? cr.cellType : '';
+      const sel = cr && ct ? renderInfoCardSel(cr.id, ct, cr.cardName, cr.orientation, ct==='tarot-minor'?cr.tarotGroup:cr.guideGroup) : '';
+      html += `<div class="carry-box">
+        <div class="carry-title">⭐ 上一關帶來的貴人卡${carryIn>1?' #'+(ci+1):''}
+          <span class="carry-state">${cr && cr.cardName ? '已換成：'+cr.cardName+(cr.orientation?' '+cr.orientation:'') : '可抵一張訊息卡'}</span></div>
+        <div class="field-group"><div class="field-label">要換成的牌種</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;">
+            ${CARRY_BTNS.map(t=>`<button class="carry-type ${ct===t.key?'active':''}" onclick="useCarryNoble(${ci},'${t.key}')">${t.label}</button>`).join('')}
+          </div></div>
+        ${sel}
+        ${cr ? `<button class="carry-cancel" onclick="cancelCarryNoble(${ci})">不換，保留為貴人卡</button>` : ''}
+      </div>`;
+    }
   }
 
   // 更新 header 過關狀態
@@ -964,26 +992,33 @@ function renderPhaseContent() {
     const playerTag = `<span style="font-weight:600;color:${pColor}">${pName}</span>${topic ? ' · <span style="font-style:italic;opacity:.8">' + topic + '</span>' : ''}`;
     const topRow = '<div style="padding:4px 12px 2px;font-size:12px;">' + playerTag + '</div>';
 
-    if (status.blocked) {
-      headerStatus.innerHTML = topRow + '<div class="status-bar warn">🍃 還有 ' + status.pendingRelease + ' 張放下卡未執行，需先放下訊息牌才能過關</div>';
-    } else if (status.canPass) {
-      headerStatus.innerHTML = topRow + '<div class="status-bar pass">✅ 已達過關條件！可繼續或進入下一關（最多9張）</div>';
-    } else if (status.atLimit) {
-      headerStatus.innerHTML = topRow + '<div class="status-bar limit">🔴 已達9張上限，請確認是否過關</div>';
+    const releaseLine = status.blocked
+      ? '<div class="status-bar warn">🍃 還有 ' + status.pendingRelease + ' 張放下卡未執行，需先放下訊息牌才能過關</div>' : '';
+    const conditionsMet = status.passA || status.passB;
+    if (status.canPass) {
+      const staying = player.stayPhase === currentPhase;
+      const nextName = {body:'心', mind:'靈', spirit:''}[currentPhase];
+      const goBtn = staying ? ` <button onclick="leaveStayPhase()" style="margin-left:auto;padding:3px 10px;border:none;border-radius:12px;background:var(--pass-c);color:#fff;font-size:12px;cursor:pointer;white-space:nowrap;">${nextName ? '進入「'+nextName+'」關 →' : '前往藍圖 ✦'}</button>` : '';
+      headerStatus.innerHTML = topRow + '<div class="status-bar pass">✅ ' + (staying ? '已過關，繼續抽牌中' : player.phaseDone[currentPhase] ? '此關已過關' : '已達過關條件') + goBtn + '</div>';
+    } else if (conditionsMet) {
+      // 條件都齊了，只差放下
+      headerStatus.innerHTML = topRow + releaseLine;
     } else {
       const a = '方式①：' + (status.has3Types ? '塔羅✓ 議題✓ 指引✓' : '需各有1張塔羅、議題、指引');
       const b = '方式②：' + status.infoCount + '/7 張';
       const noble = status.hasNoble ? '' : '　缺貴人卡×1';
-      const hint = status.releaseHint ? '　' + status.releaseHint : '';
-      headerStatus.innerHTML = topRow + '<div class="status-bar warn">🎯 ' + a + '　' + b + noble + hint + '</div>';
+      const hint = (!status.blocked && status.releaseHint) ? '　' + status.releaseHint : '';
+      const limit = status.atLimit ? '<div class="status-bar limit">🔴 已達9張上限，請確認是否過關</div>' : '';
+      headerStatus.innerHTML = topRow + releaseLine + '<div class="status-bar warn">🎯 ' + a + '　' + b + noble + hint + '</div>' + limit;
     }
   }
 
   // rolls
-  if (rolls.length === 0) {
+  if (rolls.filter(r => !r.fromCarry).length === 0) {
     html += '<div class="empty-state">還沒有紀錄<br>點 ＋ 記錄這一步</div>';
   } else {
-    html += `<div class="round-log">${rolls.map((r, idx) => renderRoll(r, idx+1, rolls)).join('')}</div>`;
+    const stepRolls = rolls.filter(r => !r.fromCarry);
+    html += `<div class="round-log">${stepRolls.map((r, idx) => renderRoll(r, idx+1, stepRolls)).join('')}</div>`;
   }
 
   document.getElementById('mainContent').innerHTML = html;
@@ -1656,7 +1691,7 @@ function showPassModal(player, phase, status) {
 
   const modal = document.createElement('div');
   modal.id = 'passModal';
-  modal.style.cssText = 'position:fixed;inset:0;z-index:500;display:flex;align-items:flex-end;justify-content:center;background:rgba(44,34,24,0.5);backdrop-filter:blur(4px);';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:10001;display:flex;align-items:flex-end;justify-content:center;background:rgba(44,34,24,0.5);backdrop-filter:blur(4px);';
   modal.innerHTML = `<div style="width:100%;max-width:480px;background:linear-gradient(160deg,#FDFCF9,#F7F2E8);border-radius:20px 20px 0 0;padding:28px 22px 36px;display:flex;flex-direction:column;gap:16px;">
     <div style="width:32px;height:3px;background:var(--border);border-radius:2px;margin:0 auto 4px;"></div>
     <div style="text-align:center;">
@@ -1666,13 +1701,49 @@ function showPassModal(player, phase, status) {
     </div>
     <div style="background:linear-gradient(135deg,var(--pass-bg),#E4F2EA);border-radius:8px;padding:14px 16px;font-size:13px;color:var(--pass-c);line-height:1.8;">
       訊息卡 ${status.infoCount} 張 · 貴人卡 ${status.totalNobles} 張<br>
-      ${nextPhase ? `已自動進入「${PHASE_NAMES[nextPhase]}」關` : '已自動前往答案藍圖'}
+      可以直接進入下一關，或留在這關繼續抽牌
     </div>
     <button onclick="closePassModal()" style="width:100%;padding:14px;background:linear-gradient(135deg,#A07850,#7C5C38);border:none;border-radius:6px;color:#fff;font-size:15px;font-family:var(--font);letter-spacing:.08em;cursor:pointer;">
-      知道了
+      ${nextPhase ? `進入「${PHASE_NAMES[nextPhase]}」關（知道了）` : '前往答案藍圖（知道了）'}
+    </button>
+    <button onclick="stayInPhase('${phase}')" style="width:100%;padding:12px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-muted);font-size:14px;cursor:pointer;letter-spacing:.04em;">
+      繼續抽牌（留在「${PHASE_NAMES[phase]}」關，最多 9 張）
     </button>
   </div>`;
   document.body.appendChild(modal);
+}
+
+// 過關後選擇繼續抽牌：回到這關，之後切換玩家也會回到這關
+function stayInPhase(phase) {
+  closePassModal();
+  const player = getPlayer(); if (!player) return;
+  // 移除剛進下一關時自動新增、還沒填的空白輪
+  const order = ['body','mind','spirit'];
+  const next = order[order.indexOf(phase)+1];
+  if (next) {
+    const arr = player.phases[next];
+    const last = arr[arr.length-1];
+    if (last && !last.cellType && !last.cardName) arr.pop();
+  }
+  player.stayPhase = phase;
+  setPhase(phase);
+  autoSave();
+}
+
+// 停留抽牌結束 → 進入下一關
+function leaveStayPhase() {
+  const player = getPlayer(); if (!player) return;
+  const phase = player.stayPhase || currentPhase;
+  // 空白輪不留
+  const arr = player.phases[phase];
+  const last = arr[arr.length-1];
+  if (last && !last.cellType && !last.cardName) arr.pop();
+  player.stayPhase = null;
+  const order = ['body','mind','spirit'];
+  const next = order[order.indexOf(phase)+1];
+  if (next) player.nobleCarry[next] = calcNobleCarryForward(player, phase);
+  setPhase(next || 'blueprint');
+  autoSave();
 }
 
 function closePassModal() {
@@ -1704,13 +1775,35 @@ function addRoll() {
   setTimeout(() => { const a = document.getElementById('scrollArea'); a.scrollTop = a.scrollHeight; }, 60);
 }
 
+// 用上一關帶來的貴人卡換一張訊息牌
+function useCarryNoble(ci, type) {
+  const player = getPlayer(); if (!player) return;
+  const arr = player.phases[currentPhase];
+  let cr = arr.find(r => r.fromCarry && r.carryIndex === ci);
+  if (!cr) {
+    cr = { id: nextId++, cellType:'', cardName:'', orientation:'', tarotGroup:'', guideGroup:'', note:'', extras:[], collapsed:true, fromCarry:true, carryIndex:ci };
+    // 放在最前面（照順序排在這關第一輪之前）
+    const firstStep = arr.findIndex(r => !r.fromCarry);
+    arr.splice(firstStep < 0 ? arr.length : firstStep, 0, cr);
+  }
+  if (cr.cellType !== type) { cr.cellType = type; cr.cardName = ''; cr.orientation = ''; cr.tarotGroup = ''; cr.guideGroup = ''; }
+  renderPhaseContent();
+  autoSave();
+}
+function cancelCarryNoble(ci) {
+  const player = getPlayer(); if (!player) return;
+  player.phases[currentPhase] = player.phases[currentPhase].filter(r => !(r.fromCarry && r.carryIndex === ci));
+  renderPhaseContent();
+  autoSave();
+}
+
 // 手動調整步驟順序
 function moveRoll(id, dir) {
   const player = getPlayer(); if (!player) return;
   const arr = player.phases[currentPhase];
   const i = arr.findIndex(r => r.id === id);
   const j = i + dir;
-  if (i < 0 || j < 0 || j >= arr.length) return;
+  if (i < 0 || j < 0 || j >= arr.length || arr[j].fromCarry) return;
   [arr[i], arr[j]] = [arr[j], arr[i]];
   renderPhaseContent();
   updateHandBar();
@@ -1734,6 +1827,11 @@ function updateRoll(id, field, val) {
   }
   updateDots();
   if (field === 'cardName') updateHandBar();
+  if (field === 'cardName') {
+    const pl = getPlayer();
+    const cr = pl && pl.phases[currentPhase].find(r => r.id === id);
+    if (cr && cr.fromCarry) { saveRoll(id); return; }
+  }
 }
 
 function selectCellType(id, key) {
