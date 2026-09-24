@@ -365,6 +365,24 @@ const CELL_TYPES = [
 const CELL_CLASS = {tarot:'tarot','tarot-minor':'tarot',issue:'issue',guide:'guide',noble:'noble',release:'release',destiny:'destiny',golden:'golden',first:'first'};
 const INFO_CELLS = ['tarot','tarot-minor','issue','guide','golden']; // 訊息卡類型
 
+// ── 附加貴人：玩家是「受助方」，得到的是對方給的牌，不是貴人卡 ──
+function isExtraNoble(r) { return !!(r && r.isExtra && r.cellType === 'noble'); }
+// 附加貴人實際得到的牌種（命運之輪再往下看抽到的牌種）
+function nobleGiftType(r) {
+  if (!isExtraNoble(r)) return null;
+  return r.nobleCardType === 'destiny' ? (r.destinyCardType || null) : (r.nobleCardType || null);
+}
+// 這一輪對手牌貢獻的訊息牌種；不是訊息牌回傳 null
+function infoTypeOf(r) {
+  if (isExtraNoble(r)) { const t = nobleGiftType(r); return (INFO_CELLS.includes(t) && r.cardName) ? t : null; }
+  return INFO_CELLS.includes(r.cellType) ? r.cellType : null;
+}
+function isInfoRoll(r) { return infoTypeOf(r) !== null; }
+// 真正的貴人卡：只有自己踩到貴人格子才算
+function isNobleCard(r) { return r.cellType === 'noble' && !r.isExtra; }
+// 得到放下卡：放下格子，或附加貴人給的是放下卡
+function givesReleaseCard(r) { return r.cellType === 'release' || (isExtraNoble(r) && r.nobleCardType === 'release'); }
+
 const CARD_OPTIONS = {
   'tarot': ['愚者','魔術師','女祭司','皇后','皇帝','教皇','戀人','戰車','力量','隱者','命運之輪','正義','倒吊人','死神','節制','惡魔','高塔','星星','月亮','太陽','審判','世界'],
   'tarot-minor': ['權杖A','權杖2','權杖3','權杖4','權杖5','權杖6','權杖7','權杖8','權杖9','權杖10','權杖侍者','權杖騎士','權杖皇后','權杖國王','聖杯A','聖杯二','聖杯三','聖杯四','聖杯五','聖杯六','聖杯七','聖杯八','聖杯九','聖杯十','聖杯侍者','聖杯騎士','聖杯皇后','聖杯國王','寶劍A','寶劍二','寶劍三','寶劍四','寶劍五','寶劍六','寶劍七','寶劍八','寶劍九','寶劍十','寶劍侍者','寶劍騎士','寶劍皇后','寶劍國王','錢幣A','錢幣2','錢幣3','錢幣4','錢幣5','錢幣6','錢幣7','錢幣8','錢幣9','錢幣10','錢幣侍者','錢幣騎士','錢幣皇后','錢幣國王'],
@@ -426,7 +444,7 @@ function calcPassStatus(player, phase) {
 
   // 放下卡：主格子 release + 附加事件 release
   const releaseCards = rolls.reduce((acc, r) => {
-    if (r.cellType === 'release') acc++;
+    if (givesReleaseCard(r)) acc++;
     (r.extras||[]).forEach(e => { if (e.type === 'release') acc++; });
     return acc;
   }, 0);
@@ -442,7 +460,7 @@ function calcPassStatus(player, phase) {
 
   // 有未執行的放下卡 → 不能過關
   if (pendingRelease > 0) {
-    const infoCards = rolls.filter(r => INFO_CELLS.includes(r.cellType));
+    const infoCards = rolls.filter(isInfoRoll);
     return {
       canPass: false, blocked: true, pendingRelease,
       infoCount: infoCards.length, has3Types: false, hasNoble: false,
@@ -451,14 +469,14 @@ function calcPassStatus(player, phase) {
     };
   }
 
-  const infoCards = rolls.filter(r => INFO_CELLS.includes(r.cellType));
-  const nobles = rolls.filter(r => r.cellType === 'noble').length;
+  const infoCards = rolls.filter(isInfoRoll);
+  const nobles = rolls.filter(isNobleCard).length;
   const nobleCarry = player.nobleCarry[phase] || 0;
   const totalNobles = nobles + nobleCarry;
 
-  const hasTarot = infoCards.some(r => r.cellType === 'tarot' || r.cellType === 'tarot-minor');
-  const hasIssue = infoCards.some(r => r.cellType === 'issue');
-  const hasGuide = infoCards.some(r => r.cellType === 'guide');
+  const hasTarot = infoCards.some(r => infoTypeOf(r) === 'tarot' || infoTypeOf(r) === 'tarot-minor');
+  const hasIssue = infoCards.some(r => infoTypeOf(r) === 'issue');
+  const hasGuide = infoCards.some(r => infoTypeOf(r) === 'guide');
   const has3Types = hasTarot && hasIssue && hasGuide;
   const infoCount = infoCards.length;
   const hasNoble  = totalNobles >= 1;
@@ -480,9 +498,9 @@ function calcPassStatus(player, phase) {
   // 放下規則：塔羅、議題、指引各需保留至少 1 張
   let releaseHint = null;
   if (!canPass && releaseCards === 0 && has3Types && hasNoble) {
-    const tarotCount = infoCards.filter(r => r.cellType==='tarot'||r.cellType==='tarot-minor').length;
-    const issueCount = infoCards.filter(r => r.cellType==='issue').length;
-    const guideCount = infoCards.filter(r => r.cellType==='guide').length;
+    const tarotCount = infoCards.filter(r => infoTypeOf(r)==='tarot'||infoTypeOf(r)==='tarot-minor').length;
+    const issueCount = infoCards.filter(r => infoTypeOf(r)==='issue').length;
+    const guideCount = infoCards.filter(r => infoTypeOf(r)==='guide').length;
     const maxDrop = Math.max(0, tarotCount-1) + Math.max(0, issueCount-1) + Math.max(0, guideCount-1);
     if (maxDrop > 0 && (infoCount - maxDrop) >= 7 && hasNoble) {
       releaseHint = `最多可放下 ${maxDrop} 張後達方式②過關`;
@@ -495,7 +513,7 @@ function calcPassStatus(player, phase) {
 
 function calcNobleCarryForward(player, phase) {
   const rolls = player.phases[phase];
-  const nobles = rolls.filter(r => r.cellType === 'noble').length;
+  const nobles = rolls.filter(isNobleCard).length;
   const carry  = player.nobleCarry[phase] || 0;
   const used   = (nobles + carry) >= 1 ? 1 : 0;
   return Math.max(0, nobles + carry - used);
@@ -935,7 +953,8 @@ function renderBlueprint(player) {
     const issueRolls = rolls.filter(r => (r.cellType==='issue'||r.cellType==='golden') && r.cardName);
     const guideRolls = rolls.filter(r => (r.cellType==='guide'||r.cellType==='golden') && r.cardName);
     // 也檢查 extras 裡的貴人得牌
-    const extraCards = rolls.flatMap(r => (r.extras||[]).filter(e => e.cardName).map(e => ({cellType: e.nobleDice||e.destinyRole, cardName: e.cardName})));
+    const extraCards = rolls.flatMap(r => (r.extras||[]).filter(e => e.cardName).map(e => ({cellType: e.nobleDice||e.destinyRole, cardName: e.cardName})))
+      .concat(rolls.filter(r => isExtraNoble(r) && isInfoRoll(r)).map(r => ({cellType: infoTypeOf(r), cardName: r.cardName})));
 
     const tarotOpts = [...tarotRolls, ...extraCards.filter(e => e.cellType==='tarot'||e.cellType==='tarot-minor')];
     const issueOpts = [...issueRolls, ...extraCards.filter(e => e.cellType==='issue')];
@@ -1126,13 +1145,14 @@ function renderRoll(r, idx, phaseRounds) {
 
       // 貴人：選給的牌種
       if (r.cellType === 'noble') {
-        const NOBLE_EXTRA = [{key:'release',label:'放下卡',bg:'var(--release-bg)',c:'var(--release-c)'},{key:'destiny',label:'命運之輪',bg:'var(--destiny-bg)',c:'var(--destiny-c)'}];
+        const NOBLE_EXTRA = [{key:'release',label:'放下',bg:'var(--release-bg)',c:'var(--release-c)'},{key:'destiny',label:'命運之輪',bg:'var(--destiny-bg)',c:'var(--destiny-c)'}];
         const cardType = r.nobleCardType || '';
         let cardSel = '';
         if (['issue','tarot','tarot-minor','guide'].includes(cardType)) {
           cardSel = renderInfoCardSel(r.id, cardType, r.cardName, r.orientation, cardType==='tarot-minor'?r.tarotGroup:r.guideGroup);
         } else if (cardType === 'release') {
-          cardSel = `<div style="font-size:12px;color:var(--release-c);background:var(--release-bg);border-radius:var(--radius);padding:8px 12px;margin-top:2px;">🍃 對方得到一張放下卡，需在本階段結束前放下等同張數的訊息牌</div>`;
+          cardSel = `<div style="font-size:12px;color:var(--release-c);background:var(--release-bg);border-radius:var(--radius);padding:8px 12px;margin-top:2px;">🍃 得到一張放下卡（不是貴人卡），需在本階段結束前放下等同張數的訊息牌</div>`;
+        } else if (cardType === 'destiny') {
           // 命運之輪：再選牌種
           const dt = r.destinyCardType || '';
           const INFO_BTNS2 = [
@@ -1150,7 +1170,14 @@ function renderRoll(r, idx, phaseRounds) {
             : '';
           cardSel = dtRow + dtCardSel;
         }
-        return `<div class="rule-note noble"><div class="rule-note-title">⭐ 貴人</div></div>
+        return `<div class="rule-note noble"><div class="rule-note-title">⭐ 貴人（受到幫助）</div>
+          <div class="rule-note-body">其他玩家給你一張牌，你得到的是那張牌，不會增加貴人卡</div></div>
+          <div class="field-group"><div class="field-label">幫助你的玩家</div>
+            <select onchange="updateRoll(${r.id},'noblePerson',this.value)">
+              <option value="">— 選擇玩家 —</option>
+              ${players.filter(p=>p.id!==currentPlayerId).map(p=>`<option value="${p.name||'玩家'+(p.id+1)}" ${r.noblePerson===(p.name||'玩家'+(p.id+1))?'selected':''}>${p.name||'玩家'+(p.id+1)}</option>`).join('')}
+            </select>
+          </div>
           <div class="field-group"><div class="field-label">得到的牌種</div>
             ${typeRow('nobleCardType', NOBLE_EXTRA)}
           </div>${cardSel}`;
@@ -1160,12 +1187,12 @@ function renderRoll(r, idx, phaseRounds) {
       if (r.cellType === 'release') {
         const player = getPlayer();
         const phRolls = player ? player.phases[currentPhase] : [];
-        const infoRolls = phRolls.filter(roll => INFO_CELLS.includes(roll.cellType) && roll.cardName && roll.collapsed && roll.id !== r.id);
+        const infoRolls = phRolls.filter(roll => isInfoRoll(roll) && roll.cardName && roll.collapsed && roll.id !== r.id);
         return `<div class="rule-note release"><div class="rule-note-title">🍃 放下牌</div></div>
           <div class="field-group"><div class="field-label">選擇要放下的牌</div>
             <select onchange="updateRoll(${r.id},'releasedCard',this.value)">
               <option value="">— 選擇 —</option>
-              ${infoRolls.map(roll=>`<option value="${roll.cardName}" ${r.releasedCard===roll.cardName?'selected':''}>${roll.cardName}（${CELL_TYPES.find(c=>c.key===roll.cellType)?.label||''}）</option>`).join('')}
+              ${infoRolls.map(roll=>`<option value="${roll.cardName}" ${r.releasedCard===roll.cardName?'selected':''}>${roll.cardName}（${CELL_TYPES.find(c=>c.key===infoTypeOf(roll))?.label||''}）</option>`).join('')}
               ${infoRolls.length===0?'<option disabled>尚無可放下的牌</option>':''}
             </select>
           </div>`;
@@ -1399,9 +1426,9 @@ function renderHandPageHTML(player) {
   let html = '<div class="hand-page">';
   PHASES.forEach(ph => {
     const rolls = player.phases[ph];
-    const infoRolls = rolls.filter(r => INFO_CELLS.includes(r.cellType) && r.collapsed);
-    const nobles = rolls.filter(r => r.cellType === 'noble' && r.collapsed);
-    const releases = rolls.filter(r => r.cellType === 'release' && r.collapsed);
+    const infoRolls = rolls.filter(r => isInfoRoll(r) && r.collapsed);
+    const nobles = rolls.filter(r => isNobleCard(r) && r.collapsed);
+    const releases = rolls.filter(r => givesReleaseCard(r) && r.collapsed);
     // 已執行放下的數量
     const releasedDone = rolls.reduce((acc, r) => {
       (r.extras||[]).forEach(e => { if (e.type === 'release' && e.releasedCard) acc++; });
@@ -1416,7 +1443,8 @@ function renderHandPageHTML(player) {
       <div class="hand-grid">
         ${infoRolls.map(r => {
           const img = getCardImg(r.cardName, r.orientation);
-          const cls = r.cellType==='tarot'||r.cellType==='tarot-minor' ? 'tarot-c' : r.cellType==='issue' ? 'issue-c' : r.cellType==='guide' ? 'guide-c' : 'golden-c';
+          const t = infoTypeOf(r);
+          const cls = t==='tarot'||t==='tarot-minor' ? 'tarot-c' : t==='issue' ? 'issue-c' : t==='guide' ? 'guide-c' : 'golden-c';
           const bgMap = {'tarot-c':'linear-gradient(160deg,#e8d4b0,#c09050)','issue-c':'linear-gradient(160deg,#b8cce8,#6090c8)','guide-c':'linear-gradient(160deg,#c8b8e0,#9870c8)','golden-c':'linear-gradient(160deg,#f0dea0,#c8a030)'};
           return `<div class="hand-card-item" onclick="showLightbox('${img||''}','${r.cardName||''}','${r.orientation||''}')">
             <div class="hand-card-img-wrap">
@@ -1491,14 +1519,14 @@ function updateHandBar() {
   const rolls = player.phases[currentPhase] || [];
   rolls.forEach(r => {
       // 訊息牌
-      if (INFO_CELLS.includes(r.cellType) && r.cardName) {
+      if (isInfoRoll(r) && r.cardName) {
         const img = getCardImg(r.cardName, r.orientation);
         const div = document.createElement('div');
         div.style.cssText = 'flex-shrink:0;width:32px;height:50px;border-radius:3px;overflow:hidden;box-shadow:0 2px 5px rgba(124,98,72,0.22);cursor:pointer;';
         if (img) {
           div.innerHTML = `<img src="${img}" style="width:100%;height:100%;object-fit:cover;" alt="${r.cardName}">`;
         } else {
-          const bg = r.cellType==='issue'?'#8090c0':r.cellType==='guide'?'#9070c0':'#c0a060';
+          const bg = infoTypeOf(r)==='issue'?'#8090c0':infoTypeOf(r)==='guide'?'#9070c0':'#c0a060';
           div.style.background = bg;
           div.style.display = 'flex';
           div.style.alignItems = 'center';
@@ -1513,8 +1541,8 @@ function updateHandBar() {
         bar.appendChild(div);
       }
 
-      // 貴人 ⚪
-      if (r.cellType === 'noble') {
+      // 貴人 ⚪（附加貴人不算）
+      if (isNobleCard(r)) {
         const t = document.createElement('div');
         t.style.cssText = 'flex-shrink:0;width:32px;height:50px;border-radius:3px;border:1.5px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:18px;';
         t.textContent = '⚪';
@@ -1523,7 +1551,7 @@ function updateHandBar() {
       }
 
       // 放下 ⚫（骰到放下格 或 附加放下未執行）
-      if (r.cellType === 'release' && !(r.isExtra && r.releasedCard)) {
+      if ((r.cellType === 'release' && !(r.isExtra && r.releasedCard)) || (isExtraNoble(r) && r.nobleCardType === 'release')) {
         const t = document.createElement('div');
         t.style.cssText = 'flex-shrink:0;width:32px;height:50px;border-radius:3px;background:#2C2218;display:flex;align-items:center;justify-content:center;font-size:18px;';
         t.textContent = '⚫';
