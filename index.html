@@ -862,10 +862,27 @@ function savePlayerName(id) {
   showToast('名稱已更新');
 }
 
+// 已達標但還沒標記過關的關卡（舊存檔、或沒按儲存就切走）→ 補標記為已過
+function syncPhaseProgress(player) {
+  if (!player) return;
+  const order = ['body','mind','spirit'];
+  for (let k = 0; k < order.length; k++) {
+    const ph = order[k];
+    if (player.phaseDone[ph]) continue;
+    if (!calcPassStatus(player, ph).canPass) break;
+    player.phaseDone[ph] = true;
+    const next = order[k+1];
+    if (next) player.nobleCarry[next] = calcNobleCarryForward(player, ph);
+  }
+}
+
 // 切換玩家：顯示該玩家目前進行中的關卡（第一個還沒過的關）
 function applyPlayerSwitch(id) {
+  const prev = getPlayer();
+  syncPhaseProgress(prev);
   currentPlayerId = id;
   const player = getPlayer();
+  syncPhaseProgress(player);
   if (player) {
     if (!player.phaseDone['body']) currentPhase = 'body';
     else if (!player.phaseDone['mind']) currentPhase = 'mind';
