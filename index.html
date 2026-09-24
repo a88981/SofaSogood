@@ -47,7 +47,7 @@
   --err-bg: #FBF0EE; --err-c: #A03030;
 
   --radius: 6px;
-  --tab-h: 62px; --hand-h: 68px;
+  --tab-h: 62px; --hand-h: 66px;
   --header-h: 54px;
   --header-status-h: 36px;
   --font: 'Noto Serif TC','Georgia',serif;
@@ -117,6 +117,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15
 .cell-badge.release{background:var(--release-bg);color:var(--release-c);}
 .cell-badge.destiny{background:var(--destiny-bg);color:var(--destiny-c);}
 .cell-badge.golden{background:var(--golden-bg);color:var(--golden-c);}
+.cell-badge.first{background:#F0EDE6;color:var(--text-dim);}
+.ct-btn.active.first{background:#F0EDE6;color:var(--text-muted);border-color:var(--text-dim);}
 .ct-btn.active.golden{background:var(--golden-bg);color:var(--golden-c);border-color:var(--golden-c);}
 .rule-note.golden{background:var(--golden-bg);border-color:var(--golden-c);}
 .del-btn{width:28px;height:28px;border-radius:50%;border:none;background:none;color:var(--text-dim);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
@@ -178,7 +180,8 @@ textarea{resize:none;line-height:1.5;min-height:60px;}
 .hand-card-mini.destiny-c{background:linear-gradient(160deg,#a8d8b0,#50a868);}
 .hand-card-mini.golden-c{background:linear-gradient(160deg,#f0dea0,#c8a030);}
 .tab-bar{position:fixed;bottom:0;left:0;right:0;height:var(--tab-h);background:linear-gradient(0deg,#FDFCF9 60%,rgba(247,243,236,0.96));border-top:1px solid var(--border);display:flex;z-index:100;}
-.tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:none;background:none;cursor:pointer;padding:6px 0;position:relative;}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:none;background:none;cursor:pointer;padding:6px 0;position:relative;transition:background .15s;}
+.tab.player-active{border-radius:0;}
 .tab-icon{font-size:17px;color:var(--text-dim);}
 .tab-label{font-size:10px;color:var(--text-dim);}
 .tab.active .tab-icon,.tab.active .tab-label{color:var(--gold);}
@@ -261,10 +264,23 @@ input[type="file"]{display:none;}
 .extra-card-hd{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--border);}
 .extra-card-label{font-size:13px;font-weight:500;color:var(--text-muted);}
 .extra-card-body{padding:10px 12px;display:flex;flex-direction:column;gap:10px;}
-.roll-header{cursor:pointer;user-select:none;}
-.roll-save-btn{width:100%;padding:11px;border:none;border-top:1px solid var(--border);background:linear-gradient(135deg,#A07850,#7C5C38);color:#fff;font-size:13px;letter-spacing:.08em;cursor:pointer;font-family:var(--font);}
-.roll-save-btn.saved{background:transparent;color:var(--text-dim);font-size:12px;border-top:1px solid var(--border);}
-.roll-save-btn:active{opacity:.8;}
+.roll-entry.extra-roll{background:linear-gradient(160deg,#FFFBEE,#FFF5D0);border-color:rgba(184,149,106,0.2);}
+.roll-entry.extra-roll .roll-header{background:rgba(255,248,220,0.6);}
+.roll-save-row{display:flex;gap:0;border-top:1px solid var(--border);}
+.roll-save-btn{flex:1;padding:11px;border:none;background:linear-gradient(135deg,#A07850,#7C5C38);color:#fff;font-size:13px;letter-spacing:.08em;cursor:pointer;font-family:var(--font);}
+.roll-confirm-btn{flex:1;padding:11px;border:none;background:linear-gradient(135deg,#A07850,#7C5C38);color:#fff;font-size:13px;letter-spacing:.06em;cursor:pointer;font-family:var(--font);}
+.roll-cancel-btn{width:80px;padding:11px;border:none;border-left:1px solid rgba(255,255,255,0.2);background:#8a7060;color:rgba(255,255,255,0.8);font-size:13px;cursor:pointer;font-family:var(--font);}
+.roll-save-btn:active,.roll-confirm-btn:active,.roll-cancel-btn:active{opacity:.8;}
+.hand-page{padding:14px;display:flex;flex-direction:column;gap:14px;}
+.hand-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+.hand-card-item{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;}
+.hand-card-img-wrap{width:100%;aspect-ratio:2/3;border-radius:4px;overflow:hidden;box-shadow:0 2px 8px rgba(124,98,72,0.18);}
+.hand-card-img-wrap img{width:100%;height:100%;object-fit:cover;}
+.hand-card-no-img{width:100%;aspect-ratio:2/3;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;color:rgba(255,255,255,0.9);}
+.hand-card-name{font-size:10px;color:var(--text-muted);text-align:center;letter-spacing:.02em;}
+.lightbox{position:fixed;inset:0;z-index:600;background:rgba(44,34,24,0.88);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:20px;}
+.lightbox img{max-width:100%;max-height:80vh;border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,0.4);}
+.lightbox-info{position:absolute;bottom:32px;left:0;right:0;text-align:center;color:#fff;font-family:var(--font);font-size:16px;letter-spacing:.06em;}
 .collapse-arrow{font-size:16px;color:var(--text-dim);transition:transform .15s;}
 .roll-entry.collapsed .roll-header{border-bottom:none;}
 .phase-chip.active.blueprint{background:var(--golden-bg);border-color:var(--golden-c);color:var(--golden-c);}
@@ -324,7 +340,7 @@ input[type="file"]{display:none;}
 const PHASES = ['body','mind','spirit'];
 const PHASE_NAMES = {body:'身',mind:'心',spirit:'靈'};
 const PHASE_DESC  = {body:'身 · 行動層',mind:'心 · 情感層',spirit:'靈 · 靈魂層'};
-const PLAYER_COLORS = ['#9a7040','#1a7a50','#1a50a0','#7030b0'];
+const PLAYER_COLORS = ['#6040A8','#2050A0','#3A7840','#A03020'];
 const ZODIAC_GROUPS = {
   fire:  ['白羊','獅子','射手'],
   earth: ['金牛','處女','摩羯'],
@@ -335,15 +351,17 @@ const ZODIAC_LABEL = {fire:'火象',earth:'土象',air:'風象',water:'水象'};
 const ZODIAC_COLOR = {fire:'#A03020',earth:'#8C5E28',air:'#6040A8',water:'#2050A0'};
 
 const CELL_TYPES = [
+  {key:'tarot',        label:'探索',   cls:'tarot'},
+  {key:'tarot-minor',  label:'真相',   cls:'tarot'},
+  {key:'guide',        label:'指引',   cls:'guide'},
+  {key:'issue',        label:'議題',   cls:'issue'},
+  {key:'destiny',      label:'命運之輪',cls:'destiny'},
   {key:'noble',        label:'貴人',   cls:'noble'},
   {key:'release',      label:'放下',   cls:'release'},
-  {key:'destiny',      label:'命運之輪',cls:'destiny'},
-  {key:'issue',        label:'議題',   cls:'issue'},
-  {key:'tarot-minor',  label:'真相',   cls:'tarot'},
-  {key:'tarot',        label:'探索',   cls:'tarot'},
-  {key:'guide',        label:'指引',   cls:'guide'},
+  {key:'golden',       label:'黃金格', cls:'golden'},
+  {key:'first',        label:'第一格', cls:'first'},
 ];
-const CELL_CLASS = {tarot:'tarot','tarot-minor':'tarot',issue:'issue',guide:'guide',noble:'noble',release:'release',destiny:'destiny'};
+const CELL_CLASS = {tarot:'tarot','tarot-minor':'tarot',issue:'issue',guide:'guide',noble:'noble',release:'release',destiny:'destiny',golden:'golden',first:'first'};
 const INFO_CELLS = ['tarot','tarot-minor','issue','guide','golden']; // 訊息卡類型
 
 const CARD_OPTIONS = {
@@ -575,12 +593,12 @@ function showFab() {
   btn.innerHTML = '＋';
   btn.setAttribute('style', [
     'position:fixed',
-    'bottom:' + (62 + 14) + 'px',
+    'bottom:' + (62 + 66 + 14) + 'px',
     'right:14px',
     'width:52px',
     'height:52px',
     'border-radius:50%',
-    'background:#9a7040',
+    'background:linear-gradient(135deg,#A07850,#7C5C38)',
     'color:#fff',
     'border:none',
     'font-size:28px',
@@ -592,8 +610,73 @@ function showFab() {
     'box-shadow:0 4px 14px rgba(154,112,64,.5)',
     'line-height:1',
   ].join(';'));
-  btn.onclick = addRoll;
+  btn.onclick = showAddMenu;
   document.body.appendChild(btn);
+}
+
+function showAddMenu() {
+  if (document.getElementById('addMenu')) { document.getElementById('addMenu').remove(); return; }
+  const m = document.createElement('div');
+  m.id = 'addMenu';
+  m.style.cssText = 'position:fixed;bottom:' + (62+14+60) + 'px;right:14px;z-index:9998;display:flex;flex-direction:column;gap:6px;align-items:flex-end;';
+  m.innerHTML = '<button onclick="document.getElementById(\'addMenu\').remove();addRoll()" style="padding:10px 18px;border-radius:20px;border:none;background:linear-gradient(135deg,#A07850,#7C5C38);color:#fff;font-size:13px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,0.15);white-space:nowrap;letter-spacing:.04em;">🎲 新增這一輪</button>'
+    + '<button onclick="document.getElementById(\'addMenu\').remove();addExtraRoll()" style="padding:10px 18px;border-radius:20px;border:none;background:linear-gradient(135deg,#6040A8,#402880);color:#fff;font-size:13px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,0.15);white-space:nowrap;letter-spacing:.04em;">✦ 附加事件</button>';
+  document.body.appendChild(m);
+  setTimeout(() => document.addEventListener('click', function h(e) {
+    const menu = document.getElementById('addMenu');
+    if (menu && !menu.contains(e.target) && e.target.id !== 'mainFab') { menu.remove(); document.removeEventListener('click', h); }
+  }), 100);
+}
+
+function addExtraRoll() {
+  // 新增附加事件輪次，格子類型限定四種，isExtra 標記
+  const player = getPlayer(); if (!player) return;
+  player.phases[currentPhase].forEach(r => { r.collapsed = true; });
+  player.phases[currentPhase].push({
+    id: nextId++, cellType:'', cardName:'', orientation:'', tarotGroup:'', guideGroup:'',
+    note:'', extras:[], collapsed:false,
+    noblePerson:'', nobleDice:'', nobleRole:'',
+    releasedCard:'', releaseType:'', destinyWinner:'', destinyCardType:'',
+    isExtra: true  // 標記為附加事件
+  });
+  renderPhaseContent();
+  setTimeout(() => {
+    const a = document.getElementById('scrollArea');
+    if (a) a.scrollTop = a.scrollHeight;
+  }, 60);
+}
+
+function showExtraMenu() {
+  const m = document.createElement('div');
+  m.id = 'extraMenu';
+  m.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(44,34,24,0.5);backdrop-filter:blur(4px);display:flex;align-items:flex-end;';
+  m.innerHTML = '<div style="width:100%;background:linear-gradient(160deg,#FDFCF9,#F7F2E8);border-radius:20px 20px 0 0;padding:20px 18px 36px;display:flex;flex-direction:column;gap:10px;" onclick="event.stopPropagation()">'
+    + '<div style="width:32px;height:3px;background:var(--border);border-radius:2px;margin:0 auto 8px;"></div>'
+    + '<div style="font-family:var(--font);font-size:14px;color:var(--text-muted);margin-bottom:4px;letter-spacing:.04em;">選擇附加事件類型</div>'
+    + '<button onclick="document.getElementById(&quot;extraMenu&quot;).remove();addRollWithType(&quot;destiny&quot;)" style="width:100%;padding:13px;border:none;border-radius:var(--radius);background:var(--destiny-bg);color:var(--destiny-c);font-size:14px;cursor:pointer;text-align:left;">🎡 命運之輪</button>'
+    + '<button onclick="document.getElementById(&quot;extraMenu&quot;).remove();addRollWithType(&quot;noble&quot;)" style="width:100%;padding:13px;border:none;border-radius:var(--radius);background:var(--noble-bg);color:var(--noble-c);font-size:14px;cursor:pointer;text-align:left;">⭐ 貴人</button>'
+    + '<button onclick="document.getElementById(&quot;extraMenu&quot;).remove();addRollWithType(&quot;release&quot;)" style="width:100%;padding:13px;border:none;border-radius:var(--radius);background:var(--release-bg);color:var(--release-c);font-size:14px;cursor:pointer;text-align:left;">🍃 放下牌</button>'
+    + '<button onclick="document.getElementById(&quot;extraMenu&quot;).remove();addRollWithType(&quot;golden&quot;)" style="width:100%;padding:13px;border:none;border-radius:var(--radius);background:var(--golden-bg);color:var(--golden-c);font-size:14px;cursor:pointer;text-align:left;">✨ 黃金格</button>'
+    + '<button onclick="document.getElementById(&quot;extraMenu&quot;).remove()" style="width:100%;padding:12px;border:1px solid var(--border);border-radius:var(--radius);background:transparent;color:var(--text-muted);font-size:14px;cursor:pointer;">取消</button>'
+    + '</div>';
+  m.onclick = () => m.remove();
+  document.body.appendChild(m);
+}
+
+function addRollWithType(cellType) {
+  const player = getPlayer(); if (!player) return;
+  player.phases[currentPhase].forEach(r => { r.collapsed = true; });
+  player.phases[currentPhase].push({
+    id: nextId++, cellType, cardName:'', orientation:'', tarotGroup:'', guideGroup:'',
+    note:'', extras:[], collapsed:false,
+    noblePerson:'', nobleDice:'', nobleRole:'',
+    releasedCard:'', releaseType:'', destinyWinner:'', destinyCardType:''
+  });
+  renderPhaseContent();
+  setTimeout(() => {
+    const a = document.getElementById('scrollArea');
+    if (a) a.scrollTop = a.scrollHeight;
+  }, 60);
 }
 
 function hideFab() {
@@ -625,12 +708,82 @@ function renderPlayerTabs() {
     const hasRolls = PHASES.some(ph => p.phases[ph].length > 0);
     const isActive = p.id === currentPlayerId;
     const name = p.name || '玩家'+(p.id+1);
-    return `<button class="tab ${isActive?'active player-active':''}" onclick="switchPlayer(${p.id})" style="${isActive?'color:var(--gold);':''}">
-      <span class="tab-icon" style="font-size:15px;font-weight:600;color:${PLAYER_COLORS[p.id]}">${name.charAt(0)}</span>
-      <span class="tab-label">${name}</span>
-      ${hasRolls?`<div class="tab-dot show" style="background:${PLAYER_COLORS[p.id]}"></div>`:''}
+    const color = p.color || PLAYER_COLORS[p.id];
+    const activeBg = isActive ? `${color}18` : 'transparent';
+    const borderTop = isActive ? `3px solid ${color}` : '3px solid transparent';
+    return `<button class="tab ${isActive?'active player-active':''}"
+      onclick="switchPlayer(${p.id})"
+      style="border-top:${borderTop};background:${activeBg};transition:all .15s;">
+      <div style="display:flex;align-items:center;gap:4px;">
+        <div onclick="event.stopPropagation();showColorPicker(${p.id})" style="width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0;cursor:pointer;"></div>
+        <span class="tab-label" style="font-weight:${isActive?'600':'400'};color:${isActive?color:'var(--text-muted)'};" ondblclick="event.stopPropagation();editPlayerName(${p.id})">${name}</span>
+      </div>
     </button>`;
   }).join('');
+}
+
+function showColorPicker(id) {
+  const COLORS = [
+    {c:'#6040A8',n:'紫'},{c:'#2050A0',n:'藍'},{c:'#3A7840',n:'綠'},{c:'#A03020',n:'紅'},
+    {c:'#C07030',n:'橘'},{c:'#207080',n:'青'},{c:'#8040A0',n:'洋紅'},{c:'#507030',n:'草'},
+  ];
+  const p = players.find(x => x.id === id);
+  const m = document.createElement('div');
+  m.id = 'colorPickerModal';
+  m.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(44,34,24,0.5);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px;';
+  m.innerHTML = `<div style="background:var(--surface);border-radius:var(--radius);padding:20px 18px;width:100%;max-width:280px;display:flex;flex-direction:column;gap:14px;box-shadow:0 8px 32px rgba(0,0,0,0.2);" onclick="event.stopPropagation()">
+    <div style="font-family:var(--font);font-size:14px;color:var(--text-muted);">選擇顏色</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
+      ${COLORS.map(({c,n}) => `<button onclick="setPlayerColor(${id},'${c}')" style="display:flex;flex-direction:column;align-items:center;gap:5px;border:2px solid ${(p&&p.color===c)?c:'var(--border)'};border-radius:8px;padding:10px 4px;background:${(p&&p.color===c)?c+'18':'transparent'};cursor:pointer;">
+        <div style="width:28px;height:28px;border-radius:50%;background:${c};"></div>
+        <span style="font-size:10px;color:${c};font-weight:500;">${n}</span>
+      </button>`).join('')}
+    </div>
+    <button onclick="document.getElementById('colorPickerModal').remove()" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:var(--radius);background:transparent;color:var(--text-muted);font-size:13px;cursor:pointer;">取消</button>
+  </div>`;
+  m.onclick = () => m.remove();
+  document.body.appendChild(m);
+}
+
+function setPlayerColor(id, color) {
+  const p = players.find(x => x.id === id);
+  if (p) p.color = color;
+  document.getElementById('colorPickerModal')?.remove();
+  renderPlayerTabs();
+  autoSave();
+}
+
+function editPlayerName(id) {
+  const m = document.createElement('div');
+  m.id = 'editNameModal';
+  m.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(44,34,24,0.5);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px;';
+  const p = players.find(x => x.id === id);
+  const cur = p ? p.name : '';
+  m.innerHTML = `<div style="background:var(--surface);border-radius:var(--radius);padding:22px 18px;width:100%;max-width:300px;display:flex;flex-direction:column;gap:14px;box-shadow:0 8px 32px rgba(0,0,0,0.2);" onclick="event.stopPropagation()">
+    <div style="font-family:var(--font);font-size:14px;color:var(--text-muted);letter-spacing:.04em;">修改玩家名稱</div>
+    <input id="editNameInput" type="text" value="${cur}" placeholder="輸入名稱…" style="padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:15px;outline:none;background:var(--bg);" autofocus>
+    <div style="display:flex;gap:8px;">
+      <button onclick="savePlayerName(${id})" style="flex:1;padding:11px;border:none;border-radius:var(--radius);background:linear-gradient(135deg,#A07850,#7C5C38);color:#fff;font-size:14px;cursor:pointer;">確認</button>
+      <button onclick="document.getElementById('editNameModal').remove()" style="flex:1;padding:11px;border:1px solid var(--border);border-radius:var(--radius);background:transparent;color:var(--text-muted);font-size:14px;cursor:pointer;">取消</button>
+    </div>
+  </div>`;
+  m.onclick = () => m.remove();
+  document.body.appendChild(m);
+  setTimeout(() => document.getElementById('editNameInput')?.focus(), 50);
+  document.getElementById('editNameInput')?.addEventListener('keydown', e => {
+    if (e.key === 'Enter') savePlayerName(id);
+  });
+}
+
+function savePlayerName(id) {
+  const input = document.getElementById('editNameInput');
+  if (!input) return;
+  const p = players.find(x => x.id === id);
+  if (p) p.name = input.value.trim();
+  document.getElementById('editNameModal')?.remove();
+  renderPlayerTabs();
+  autoSave();
+  showToast('名稱已更新');
 }
 
 function switchPlayer(id) {
@@ -699,18 +852,24 @@ function renderPhaseContent() {
   // 更新 header 過關狀態
   const headerStatus = document.getElementById('headerStatus');
   if (headerStatus) {
+    const pName = player.name || '玩家'+(player.id+1);
+    const pColor = player.color || PLAYER_COLORS[player.id];
+    const topic = player.topic ? `「${player.topic}」` : '';
+    const playerTag = `<span style="font-weight:600;color:${pColor}">${pName}</span>${topic ? ' · <span style="font-style:italic;opacity:.8">' + topic + '</span>' : ''}`;
+    const topRow = '<div style="padding:4px 12px 2px;font-size:12px;">' + playerTag + '</div>';
+
     if (status.blocked) {
-      headerStatus.innerHTML = '<div class="status-bar warn">🍃 還有 ' + status.pendingRelease + ' 張放下卡未執行，需先放下訊息牌才能過關</div>';
+      headerStatus.innerHTML = topRow + '<div class="status-bar warn">🍃 還有 ' + status.pendingRelease + ' 張放下卡未執行，需先放下訊息牌才能過關</div>';
     } else if (status.canPass) {
-      headerStatus.innerHTML = '<div class="status-bar pass">✅ 已達過關條件！可繼續或進入下一關（最多9張）</div>';
+      headerStatus.innerHTML = topRow + '<div class="status-bar pass">✅ 已達過關條件！可繼續或進入下一關（最多9張）</div>';
     } else if (status.atLimit) {
-      headerStatus.innerHTML = '<div class="status-bar limit">🔴 已達9張上限，請確認是否過關</div>';
+      headerStatus.innerHTML = topRow + '<div class="status-bar limit">🔴 已達9張上限，請確認是否過關</div>';
     } else {
       const a = '方式①：' + (status.has3Types ? '塔羅✓ 議題✓ 指引✓' : '需各有1張塔羅、議題、指引');
       const b = '方式②：' + status.infoCount + '/7 張';
       const noble = status.hasNoble ? '' : '　缺貴人卡×1';
       const hint = status.releaseHint ? '　' + status.releaseHint : '';
-      headerStatus.innerHTML = '<div class="status-bar warn">🎯 ' + a + '　' + b + noble + hint + '</div>';
+      headerStatus.innerHTML = topRow + '<div class="status-bar warn">🎯 ' + a + '　' + b + noble + hint + '</div>';
     }
   }
 
@@ -818,6 +977,70 @@ function setBlueprintCard(ph, field, val) {
   renderPhaseContent();
 }
 
+function renderInfoCardSel(rollId, cardType, curVal, curOrient, curGroup) {
+  if (cardType === 'issue') {
+    const opts = CARD_OPTIONS['issue'].map(o=>`<option value="${o}" ${curVal===o?'selected':''}>${o}</option>`).join('');
+    return `<div class="field-group"><div class="field-label">牌卡名稱</div>
+      <select onchange="updateRoll(${rollId},'cardName',this.value)">
+        <option value="">— 選擇 —</option>${opts}
+      </select></div>`;
+  }
+
+  if (cardType === 'tarot') {
+    const opts = CARD_OPTIONS['tarot'].map(o=>`<option value="${o}" ${curVal===o?'selected':''}>${o}</option>`).join('');
+    const orientRow = `<div class="field-group"><div class="field-label">正 / 逆位</div>
+      <div class="orient-btns">
+        <button class="orient-btn ${curOrient==='正位'?'active':''}" onclick="updateRoll(${rollId},'orientation','${curOrient==='正位'?'':'正位'}');renderPhaseContent()">正位</button>
+        <button class="orient-btn ${curOrient==='逆位'?'active':''}" onclick="updateRoll(${rollId},'orientation','${curOrient==='逆位'?'':'逆位'}');renderPhaseContent()">逆位</button>
+      </div></div>`;
+    return `<div class="field-group"><div class="field-label">牌卡名稱</div>
+      <select onchange="updateRoll(${rollId},'cardName',this.value)">
+        <option value="">— 選擇 —</option>${opts}
+      </select></div>${orientRow}`;
+  }
+
+  if (cardType === 'tarot-minor') {
+    const tg = curGroup || '';
+    const groupCards = tg ? (TAROT_MINOR_GROUPS.find(g=>g.name===tg)?.cards||[]) : [];
+    const suitRow = `<div class="field-group"><div class="field-label">牌組</div>
+      <div class="suit-btns">
+        ${TAROT_MINOR_GROUPS.map(g=>`<button class="suit-btn ${tg===g.name?'active':''}" onclick="updateRoll(${rollId},'tarotGroup','${tg===g.name?'':g.name}');renderPhaseContent()">
+          <span class="suit-icon">${g.icon}</span><span class="suit-name">${g.suit}</span>
+        </button>`).join('')}
+      </div></div>`;
+    const cardSel = tg ? `<div class="field-group"><div class="field-label">牌卡名稱</div>
+      <select onchange="updateRoll(${rollId},'cardName',this.value)">
+        <option value="">— 選擇 —</option>
+        ${groupCards.map(c=>`<option value="${c}" ${curVal===c?'selected':''}>${c}</option>`).join('')}
+      </select></div>` : '';
+    const orientRow = tg ? `<div class="field-group"><div class="field-label">正 / 逆位</div>
+      <div class="orient-btns">
+        <button class="orient-btn ${curOrient==='正位'?'active':''}" onclick="updateRoll(${rollId},'orientation','${curOrient==='正位'?'':'正位'}');renderPhaseContent()">正位</button>
+        <button class="orient-btn ${curOrient==='逆位'?'active':''}" onclick="updateRoll(${rollId},'orientation','${curOrient==='逆位'?'':'逆位'}');renderPhaseContent()">逆位</button>
+      </div></div>` : '';
+    return suitRow + cardSel + orientRow;
+  }
+
+  if (cardType === 'guide') {
+    const gg = curGroup || '';
+    const groupCards = gg ? (GUIDE_GROUPS.find(g=>g.name===gg)?.cards||[]) : [];
+    const elemRow = `<div class="field-group"><div class="field-label">元素</div>
+      <div class="suit-btns">
+        ${GUIDE_GROUPS.map(g=>`<button class="suit-btn ${gg===g.name?'active':''}" onclick="updateRoll(${rollId},'guideGroup','${gg===g.name?'':g.name}');renderPhaseContent()">
+          <span class="suit-icon">${g.icon}</span><span class="suit-name">${g.suit}</span>
+        </button>`).join('')}
+      </div></div>`;
+    const cardSel = gg ? `<div class="field-group"><div class="field-label">牌卡名稱</div>
+      <select onchange="updateRoll(${rollId},'cardName',this.value)">
+        <option value="">— 選擇 —</option>
+        ${groupCards.map(c=>`<option value="${c}" ${curVal===c?'selected':''}>${c}</option>`).join('')}
+      </select></div>` : '';
+    return elemRow + cardSel;
+  }
+
+  return '';
+}
+
 function renderRoll(r, idx, phaseRounds) {
   const ct = CELL_TYPES.find(c => c.key === r.cellType);
   const badgeCls = r.cellType ? CELL_CLASS[r.cellType] || 'none' : 'none';
@@ -856,6 +1079,96 @@ function renderRoll(r, idx, phaseRounds) {
   const cardField = (() => {
     if (!r.cellType) return '';
 
+    // ── 附加事件專屬 cardField ──
+    if (r.isExtra) {
+      const INFO_BTNS = [
+        {key:'tarot',      label:'探索',   bg:'var(--tarot-bg)',   c:'var(--tarot-c)'},
+        {key:'tarot-minor',label:'真相',   bg:'var(--tarot-bg)',   c:'var(--tarot-c)'},
+        {key:'guide',      label:'指引',   bg:'var(--guide-bg)',   c:'var(--guide-c)'},
+        {key:'issue',      label:'議題',   bg:'var(--issue-bg)',   c:'var(--issue-c)'},
+      ];
+      const typeRow = (field, extra=[]) => {
+        const all = [...extra, ...INFO_BTNS];
+        const cur = r[field] || '';
+        return `<div style="display:flex;flex-wrap:wrap;gap:6px;">
+          ${all.map(t=>`<button onclick="updateRoll(${r.id},'${field}','${cur===t.key?'':t.key}');updateRoll(${r.id},'cardName','');updateRoll(${r.id},'tarotGroup','');updateRoll(${r.id},'guideGroup','');renderPhaseContent()" style="padding:6px 14px;border-radius:20px;border:1.5px solid ${cur===t.key?t.c:'var(--border)'};background:${cur===t.key?t.bg:'transparent'};color:${cur===t.key?t.c:'var(--text-muted)'};font-size:12px;cursor:pointer;">${t.label}</button>`).join('')}
+        </div>`;
+      };
+
+      // 貴人：選給的牌種
+      if (r.cellType === 'noble') {
+        const NOBLE_EXTRA = [{key:'release',label:'放下',bg:'var(--release-bg)',c:'var(--release-c)'},{key:'destiny',label:'命運之輪',bg:'var(--destiny-bg)',c:'var(--destiny-c)'}];
+        const cardType = r.nobleCardType || '';
+        let cardSel = '';
+        if (['issue','tarot','tarot-minor','guide'].includes(cardType)) {
+          cardSel = renderInfoCardSel(r.id, cardType, r.cardName, r.orientation, cardType==='tarot-minor'?r.tarotGroup:r.guideGroup);
+        } else if (cardType === 'destiny') {
+          // 命運之輪：再選牌種
+          const dt = r.destinyCardType || '';
+          const INFO_BTNS2 = [
+            {key:'tarot',label:'探索',bg:'var(--tarot-bg)',c:'var(--tarot-c)'},
+            {key:'tarot-minor',label:'真相',bg:'var(--tarot-bg)',c:'var(--tarot-c)'},
+            {key:'guide',label:'指引',bg:'var(--guide-bg)',c:'var(--guide-c)'},
+            {key:'issue',label:'議題',bg:'var(--issue-bg)',c:'var(--issue-c)'},
+          ];
+          const dtRow = `<div class="field-group"><div class="field-label">抽到的牌種</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;">
+              ${INFO_BTNS2.map(t=>`<button onclick="updateRoll(${r.id},'destinyCardType','${dt===t.key?'':t.key}');updateRoll(${r.id},'cardName','');updateRoll(${r.id},'tarotGroup','');updateRoll(${r.id},'guideGroup','');renderPhaseContent()" style="padding:6px 14px;border-radius:20px;border:1.5px solid ${dt===t.key?t.c:'var(--border)'};background:${dt===t.key?t.bg:'transparent'};color:${dt===t.key?t.c:'var(--text-muted)'};font-size:12px;cursor:pointer;">${t.label}</button>`).join('')}
+            </div></div>`;
+          const dtCardSel = ['issue','tarot','tarot-minor','guide'].includes(dt)
+            ? renderInfoCardSel(r.id, dt, r.cardName, r.orientation, dt==='tarot-minor'?r.tarotGroup:r.guideGroup)
+            : '';
+          cardSel = dtRow + dtCardSel;
+        }
+        return `<div class="rule-note noble"><div class="rule-note-title">⭐ 貴人</div></div>
+          <div class="field-group"><div class="field-label">給予的牌種</div>
+            ${typeRow('nobleCardType', NOBLE_EXTRA)}
+          </div>${cardSel}`;
+      }
+
+      // 放下：選手上哪張牌放下
+      if (r.cellType === 'release') {
+        const player = getPlayer();
+        const phRolls = player ? player.phases[currentPhase] : [];
+        const infoRolls = phRolls.filter(roll => INFO_CELLS.includes(roll.cellType) && roll.cardName && roll.collapsed && roll.id !== r.id);
+        return `<div class="rule-note release"><div class="rule-note-title">🍃 放下牌</div></div>
+          <div class="field-group"><div class="field-label">選擇要放下的牌</div>
+            <select onchange="updateRoll(${r.id},'releasedCard',this.value)">
+              <option value="">— 選擇 —</option>
+              ${infoRolls.map(roll=>`<option value="${roll.cardName}" ${r.releasedCard===roll.cardName?'selected':''}>${roll.cardName}（${CELL_TYPES.find(c=>c.key===roll.cellType)?.label||''}）</option>`).join('')}
+              ${infoRolls.length===0?'<option disabled>尚無可放下的牌</option>':''}
+            </select>
+          </div>`;
+      }
+
+      // 命運之輪：選牌種
+      if (r.cellType === 'destiny') {
+        const cardType = r.destinyCardType || '';
+        let cardSel = '';
+        if (['issue','tarot','tarot-minor','guide'].includes(cardType)) {
+          cardSel = renderInfoCardSel(r.id, cardType, r.cardName, r.orientation, cardType==='tarot-minor'?r.tarotGroup:r.guideGroup);
+        }
+        return `<div class="rule-note destiny"><div class="rule-note-title">🎡 命運之輪</div></div>
+          <div class="field-group"><div class="field-label">抽到的牌種</div>
+            ${typeRow('destinyCardType')}
+          </div>${cardSel}`;
+      }
+
+      // 黃金格：選牌種
+      if (r.cellType === 'golden') {
+        const cardType = r.goldenCardType || '';
+        let cardSel = '';
+        if (['issue','tarot','tarot-minor','guide'].includes(cardType)) {
+          cardSel = renderInfoCardSel(r.id, cardType, r.cardName, r.orientation, cardType==='tarot-minor'?r.tarotGroup:r.guideGroup);
+        }
+        return `<div class="rule-note golden"><div class="rule-note-title">✨ 黃金格</div></div>
+          <div class="field-group"><div class="field-label">抽到的牌種</div>
+            ${typeRow('goldenCardType')}
+          </div>${cardSel}`;
+      }
+      return '';
+    }
+
     if (r.cellType === 'noble') {
       return `<div class="rule-note noble"><div class="rule-note-title">⭐ 貴人格子</div>
         <div class="rule-note-body">領取貴人卡，擲貴人骰，依指示抽取牌卡給對方</div></div>
@@ -873,67 +1186,29 @@ function renderRoll(r, idx, phaseRounds) {
     }
 
     if (r.cellType === 'destiny') {
-      const DESTINY_TYPES = [
-        {key:'issue',      icon:'🔵', label:'議題'},
-        {key:'tarot-minor',icon:'🟠', label:'真相'},
-        {key:'tarot',      icon:'⭐', label:'探索'},
-        {key:'guide',      icon:'🟢', label:'指引'},
-      ];
-      const dt = r.destinyCardType || '';
-      const destinyCardSel = (() => {
-        if (!dt) return '';
-        if (dt === 'guide') {
-          const gg = r.destinyGuideGroup || '';
-          return `<div class="field-group"><div class="field-label">元素</div>
-            <div class="suit-btns">
-              ${GUIDE_GROUPS.map(g=>`<button class="suit-btn ${gg===g.name?'active':''}" onclick="updateRoll(${r.id},'destinyGuideGroup','${gg===g.name?'':g.name}');renderPhaseContent()">
-                <span class="suit-icon">${g.icon}</span><span class="suit-name">${g.name.split('').filter(c=>!['🌬','️','💧','🔥','🌿'].includes(c)).join('').trim()}</span>
-              </button>`).join('')}
-            </div></div>
-            ${gg ? `<div class="field-group"><div class="field-label">牌卡名稱</div>
-              <select onchange="updateRoll(${r.id},'cardName',this.value)">
-                <option value="">— 選擇 —</option>
-                ${(GUIDE_GROUPS.find(g=>g.name===gg)?.cards||[]).map(c=>`<option value="${c}" ${r.cardName===c?'selected':''}>${c}</option>`).join('')}
-              </select></div>` : ''}`;
-        }
-        if (dt === 'tarot-minor') {
-          const tg = r.tarotGroup || '';
-          return `<div class="field-group"><div class="field-label">牌組</div>
-            <div class="suit-btns">
-              ${TAROT_MINOR_GROUPS.map(g=>`<button class="suit-btn ${tg===g.name?'active':''}" onclick="updateRoll(${r.id},'tarotGroup','${tg===g.name?'':g.name}');renderPhaseContent()">
-                <span class="suit-icon">${g.icon}</span><span class="suit-name">${g.suit}</span>
-              </button>`).join('')}
-            </div></div>
-            ${tg ? `<div class="field-group"><div class="field-label">牌卡名稱</div>
-              <select onchange="updateRoll(${r.id},'cardName',this.value)">
-                <option value="">— 選擇 —</option>
-                ${(TAROT_MINOR_GROUPS.find(g=>g.name===tg)?.cards||[]).map(c=>`<option value="${c}" ${r.cardName===c?'selected':''}>${c}</option>`).join('')}
-              </select></div>` : ''}`;
-        }
-        const opts = CARD_OPTIONS[dt] || [];
-        return `<div class="field-group"><div class="field-label">牌卡名稱</div>
-          <select onchange="updateRoll(${r.id},'cardName',this.value)">
-            <option value="">— 選擇 —</option>
-            ${opts.map(o=>`<option value="${o}" ${r.cardName===o?'selected':''}>${o}</option>`).join('')}
-          </select></div>`;
-      })();
       return `<div class="rule-note destiny"><div class="rule-note-title">🎡 命運之輪</div>
-        <div class="rule-note-body">憑直覺抽一張訊息卡 → 所有人輪流擲骰 → 最大者得牌 → 可選擇打開或不打開</div></div>
+        <div class="rule-note-body">憑直覺抽一張訊息卡 → 所有人輪流擲骰 → 最大者得牌</div></div>`;
+    }
 
-        <div class="field-group"><div class="field-label">① 抽出的牌種</div>
-          <div class="suit-btns" style="flex-wrap:wrap;">
-            ${DESTINY_TYPES.map(t=>`<button class="suit-btn ${dt===t.key?'active':''}" onclick="updateRoll(${r.id},'destinyCardType','${dt===t.key?'':t.key}');renderPhaseContent()" style="width:60px;">
-              <span class="suit-icon">${t.icon}</span><span class="suit-name">${t.label}</span>
-            </button>`).join('')}
-          </div></div>
-        ${destinyCardSel}
-
-        <div class="field-group"><div class="field-label">② 得牌玩家（骰子最大者）</div>
-          <select onchange="updateRoll(${r.id},'destinyWinner',this.value)">
-            <option value="">— 選擇玩家 —</option>
-            ${players.map(p=>`<option value="${p.name||'玩家'+(p.id+1)}" ${r.destinyWinner===(p.name||'玩家'+(p.id+1))?'selected':''}>${p.name||'玩家'+(p.id+1)}</option>`).join('')}
-          </select>
-        </div>`;
+    if (r.cellType === 'golden') {
+      const INFO_BTNS = [
+        {key:'tarot',      label:'探索',   bg:'var(--tarot-bg)',   c:'var(--tarot-c)'},
+        {key:'tarot-minor',label:'真相',   bg:'var(--tarot-bg)',   c:'var(--tarot-c)'},
+        {key:'guide',      label:'指引',   bg:'var(--guide-bg)',   c:'var(--guide-c)'},
+        {key:'issue',      label:'議題',   bg:'var(--issue-bg)',   c:'var(--issue-c)'},
+      ];
+      const gt = r.goldenCardType || '';
+      let cardSel = '';
+      if (['issue','tarot','tarot-minor','guide'].includes(gt)) {
+        cardSel = renderInfoCardSel(r.id, gt, r.cardName, r.orientation, gt==='tarot-minor'?r.tarotGroup:r.guideGroup);
+      }
+      return `<div class="rule-note golden"><div class="rule-note-title">✨ 黃金格</div>
+        <div class="rule-note-body">經過或停在此格，可任意抽取一張牌卡</div></div>
+        <div class="field-group"><div class="field-label">抽到的牌種</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;">
+            ${INFO_BTNS.map(t=>`<button onclick="updateRoll(${r.id},'goldenCardType','${gt===t.key?'':t.key}');updateRoll(${r.id},'cardName','');updateRoll(${r.id},'tarotGroup','');updateRoll(${r.id},'guideGroup','');renderPhaseContent()" style="padding:6px 14px;border-radius:20px;border:1.5px solid ${gt===t.key?t.c:'var(--border)'};background:${gt===t.key?t.bg:'transparent'};color:${gt===t.key?t.c:'var(--text-muted)'};font-size:12px;cursor:pointer;">${t.label}</button>`).join('')}
+          </div>
+        </div>${cardSel}`;
     }
 
     if (r.cellType === 'issue') {
@@ -988,24 +1263,17 @@ function renderRoll(r, idx, phaseRounds) {
 
   // ── 附加事件 ──
   const extras = r.extras || [];
-  const extraHTML = `
+  const extraHTML = extras.length > 0 ? `
     <div class="extra-section">
-      <div class="extra-title">附加事件</div>
       ${extras.map((ex, ei) => renderExtra(r, ex, ei)).join('')}
-      <div class="extra-add-row">
-        <button class="extra-add-btn" onclick="addExtra(${r.id},'destiny')">＋ 命運之輪</button>
-        <button class="extra-add-btn" onclick="addExtra(${r.id},'noble')">＋ 貴人</button>
-        <button class="extra-add-btn" onclick="addExtra(${r.id},'release')">＋ 放下牌</button>
-        <button class="extra-add-btn" onclick="addExtra(${r.id},'golden')" style="color:#92680a;border-color:#92680a;">＋ 黃金格</button>
-      </div>
-    </div>`;
+    </div>` : '';
 
   const isCollapsed = idx < phaseRounds.length && r.collapsed;
 
-  return `<div class="roll-entry ${isCollapsed?'collapsed':''}" id="roll-${r.id}">
+  return `<div class="roll-entry ${isCollapsed?'collapsed':''} ${r.isExtra?'extra-roll':''}" id="roll-${r.id}">
     <div class="roll-header" onclick="toggleRoll(${r.id})">
       <div class="roll-meta">
-        <span class="roll-num">第 ${idx} 輪</span>
+        <span class="roll-num">${r.isExtra ? '✦ 附加' : '第 '+idx+' 輪'}</span>
         <span class="cell-badge ${badgeCls}">${badgeLabel}</span>
         ${r.cardName ? `<span style="font-size:12px;color:var(--text-dim)">${r.cardName}${r.orientation?' '+r.orientation:''}</span>` : ''}
       </div>
@@ -1018,7 +1286,7 @@ function renderRoll(r, idx, phaseRounds) {
       <div class="field-group">
         <div class="field-label">停在哪個格子</div>
         <div class="ct-btns">
-          ${CELL_TYPES.map(c => {
+          ${(r.isExtra ? CELL_TYPES.filter(c=>['destiny','noble','release','golden'].includes(c.key)).sort((a,b)=>['destiny','noble','release','golden'].indexOf(a.key)-['destiny','noble','release','golden'].indexOf(b.key)) : CELL_TYPES).map(c => {
             const active = r.cellType === c.key ? 'active '+(CELL_CLASS[c.key]||c.key) : '';
             return `<button class="ct-btn ${active}" onclick="selectCellType(${r.id},'${c.key}')">${c.label}</button>`;
           }).join('')}
@@ -1043,9 +1311,13 @@ function renderRoll(r, idx, phaseRounds) {
         <textarea placeholder="這一步的感受或觀察…" oninput="updateRoll(${r.id},'note',this.value)">${r.note}</textarea>
       </div>
       ${extraHTML}
-      <button class="roll-save-btn ${r.collapsed?'saved':''}" onclick="saveRoll(${r.id})">
-        ${r.collapsed ? '✓ 已儲存' : '儲存這一輪'}
-      </button>
+      <div class="roll-save-row">
+        ${r.collapsed
+          ? `<button class="roll-confirm-btn" onclick="confirmEdit(${r.id})">確認修改</button>
+             <button class="roll-cancel-btn" onclick="cancelEdit(${r.id})">取消</button>`
+          : `<button class="roll-save-btn" onclick="saveRoll(${r.id})">儲存這一輪</button>`
+        }
+      </div>
     </div>
   </div>`;
 }
@@ -1060,53 +1332,197 @@ function toggleRoll(id) {
   renderPhaseContent();
 }
 
-function updateHandBar() {
-  const bar = document.getElementById('handBar');
-  if (!bar) return;
-  const player = getPlayer();
-  if (!player || !gameStarted) return;
-
-  const rolls = player.phases[currentPhase].filter(r => r.collapsed && r.cellType);
-  bar.innerHTML = '<span class="hand-bar-label">手牌</span>';
-
-  rolls.forEach(r => {
-    const img = getCardImg(r.cardName, r.orientation);
-    const cls = r.cellType === 'tarot' || r.cellType === 'tarot-minor' ? 'tarot-c'
-               : r.cellType === 'issue' ? 'issue-c'
-               : r.cellType === 'guide' ? 'guide-c'
-               : r.cellType === 'noble' ? 'noble-c'
-               : r.cellType === 'destiny' ? 'destiny-c'
-               : r.cellType === 'golden' ? 'golden-c' : 'tarot-c';
-    const div = document.createElement('div');
-    div.className = 'hand-card-mini ' + cls;
-    div.title = r.cardName || r.cellType;
-    if (img) {
-      div.innerHTML = `<img src="${img}" alt="${r.cardName}">`;
-    } else {
-      div.classList.add('no-img');
-      div.textContent = (r.cardName || '').slice(0, 2) || '?';
-    }
-    // 點擊展開該輪
-    div.onclick = () => { toggleRoll(r.id); };
-    bar.appendChild(div);
-  });
-}
-
-function saveRoll(id) {
+function confirmEdit(id) {
   const player = getPlayer(); if (!player) return;
   for (const ph of PHASES) {
     const r = player.phases[ph].find(r => r.id === id);
     if (r) { r.collapsed = true; break; }
   }
+  autoSave();
+  renderPhaseContent();
   updateHandBar();
+  showToast('已更新');
+}
+
+function cancelEdit(id) {
+  const player = getPlayer(); if (!player) return;
+  for (const ph of PHASES) {
+    const r = player.phases[ph].find(r => r.id === id);
+    if (r) { r.collapsed = true; break; }
+  }
+  renderPhaseContent();
+}
+
+function setPhaseToHand() {
+  // 手牌 tab — 切換到手牌頁
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-hand')?.classList.add('active');
+  hideFab();
+  const hs = document.getElementById('headerStatus');
+  if (hs) hs.innerHTML = '';
+  const player = getPlayer();
+  if (!player) return;
+  document.getElementById('mainContent').innerHTML = renderHandPageHTML(player);
+}
+
+function renderHandPageHTML(player) {
+  let html = '<div class="hand-page">';
+  PHASES.forEach(ph => {
+    const rolls = player.phases[ph];
+    const infoRolls = rolls.filter(r => INFO_CELLS.includes(r.cellType) && r.collapsed);
+    const nobles = rolls.filter(r => r.cellType === 'noble' && r.collapsed);
+    const releases = rolls.filter(r => r.cellType === 'release' && r.collapsed);
+    // 已執行放下的數量
+    const releasedDone = rolls.reduce((acc, r) => {
+      (r.extras||[]).forEach(e => { if (e.type === 'release' && e.releasedCard) acc++; });
+      return acc;
+    }, 0);
+    const pendingRelease = releases.length - releasedDone;
+
+    if (!infoRolls.length && !nobles.length && !releases.length) return;
+    const phaseName = PHASE_NAMES[ph];
+    html += `<div>
+      <div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">${phaseName} 關</div>
+      <div class="hand-grid">
+        ${infoRolls.map(r => {
+          const img = getCardImg(r.cardName, r.orientation);
+          const cls = r.cellType==='tarot'||r.cellType==='tarot-minor' ? 'tarot-c' : r.cellType==='issue' ? 'issue-c' : r.cellType==='guide' ? 'guide-c' : 'golden-c';
+          const bgMap = {'tarot-c':'linear-gradient(160deg,#e8d4b0,#c09050)','issue-c':'linear-gradient(160deg,#b8cce8,#6090c8)','guide-c':'linear-gradient(160deg,#c8b8e0,#9870c8)','golden-c':'linear-gradient(160deg,#f0dea0,#c8a030)'};
+          return `<div class="hand-card-item" onclick="showLightbox('${img||''}','${r.cardName||''}','${r.orientation||''}')">
+            <div class="hand-card-img-wrap">
+              ${img ? `<img src="${img}" alt="${r.cardName}">` : `<div class="hand-card-no-img" style="background:${bgMap[cls]||bgMap['tarot-c']}">${(r.cardName||'').slice(0,2)}</div>`}
+            </div>
+            <div class="hand-card-name">${r.cardName||''}${r.orientation?' '+r.orientation:''}</div>
+          </div>`;
+        }).join('')}
+        ${nobles.map(() => `<div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+          <div style="width:100%;aspect-ratio:2/3;border-radius:4px;background:#F0EDE6;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:22px;">⚪</div>
+          <div class="hand-card-name">貴人</div>
+        </div>`).join('')}
+        ${Array.from({length: pendingRelease}).map(() => `<div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+          <div style="width:100%;aspect-ratio:2/3;border-radius:4px;background:#2C2218;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:22px;">⚫</div>
+          <div class="hand-card-name">放下</div>
+        </div>`).join('')}
+      </div>
+    </div>`;
+  });
+  html += '</div>';
+  return html;
+}
+
+function showLightbox(imgUrl, name, orient) {
+  if (!imgUrl) { showToast('此牌無圖片'); return; }
+  const lb = document.createElement('div');
+  lb.className = 'lightbox';
+  lb.onclick = () => lb.remove();
+  lb.innerHTML = `<img src="${imgUrl}" alt="${name}"><div class="lightbox-info">${name}${orient?' · '+orient:''}</div>`;
+  document.body.appendChild(lb);
+}
+
+function newGame() {
+  const m = document.createElement('div');
+  m.id = 'newGameModal';
+  m.style.cssText = 'position:fixed;inset:0;z-index:600;background:rgba(44,34,24,0.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:20px;';
+  m.innerHTML = `<div style="background:var(--surface);border-radius:var(--radius);padding:24px 20px;width:100%;max-width:320px;display:flex;flex-direction:column;gap:16px;box-shadow:0 8px 32px rgba(0,0,0,0.2);">
+    <div style="font-family:var(--font);font-size:15px;color:var(--text);letter-spacing:.04em;">開始新一場遊戲？</div>
+    <div style="font-size:13px;color:var(--text-muted);line-height:1.6;">目前紀錄會自動存入歷史，之後可從首頁叫出。</div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="document.getElementById('newGameModal').remove();_doNewGame()" style="flex:1;padding:12px;border:none;border-radius:var(--radius);background:linear-gradient(135deg,#A07850,#7C5C38);color:#fff;font-size:14px;cursor:pointer;">確認</button>
+      <button onclick="document.getElementById('newGameModal').remove()" style="flex:1;padding:12px;border:1px solid var(--border);border-radius:var(--radius);background:transparent;color:var(--text-muted);font-size:14px;cursor:pointer;">取消</button>
+    </div>
+  </div>`;
+  document.body.appendChild(m);
+}
+
+function _doNewGame() {
+  archiveCurrentSession();
+  localStorage.removeItem(LS_CURRENT);
+  gameStarted = false;
+  players = [];
+  currentPhase = 'body';
+  nextId = 1;
+  window._sessionDate = new Date().toISOString().slice(0,10);
+  hideFab();
+  const ptb = document.getElementById('playerTabsBar');
+  if (ptb) ptb.innerHTML = '';
+  initPlayers(2);
+  renderSetup();
+}
+
+function updateHandBar() {
+  const bar = document.getElementById('handBar');
+  if (!bar || !gameStarted) return;
+  const player = getPlayer();
+  if (!player) return;
+
+  bar.innerHTML = '<span class="hand-bar-label">手牌</span>';
+
+  PHASES.forEach(ph => {
+    const rolls = player.phases[ph];
+    rolls.forEach(r => {
+      // 訊息牌
+      if (INFO_CELLS.includes(r.cellType) && r.cardName) {
+        const img = getCardImg(r.cardName, r.orientation);
+        const div = document.createElement('div');
+        div.style.cssText = 'flex-shrink:0;width:32px;height:50px;border-radius:3px;overflow:hidden;box-shadow:0 2px 5px rgba(124,98,72,0.22);cursor:pointer;';
+        if (img) {
+          div.innerHTML = `<img src="${img}" style="width:100%;height:100%;object-fit:cover;" alt="${r.cardName}">`;
+        } else {
+          const bg = r.cellType==='issue'?'#8090c0':r.cellType==='guide'?'#9070c0':'#c0a060';
+          div.style.background = bg;
+          div.style.display = 'flex';
+          div.style.alignItems = 'center';
+          div.style.justifyContent = 'center';
+          div.style.fontSize = '9px';
+          div.style.color = '#fff';
+          div.style.textAlign = 'center';
+          div.textContent = (r.cardName||'').slice(0,2);
+        }
+        div.title = r.cardName + (r.orientation?' '+r.orientation:'');
+        div.onclick = () => showLightbox(img, r.cardName, r.orientation);
+        bar.appendChild(div);
+      }
+
+      // 貴人 ⚪
+      if (r.cellType === 'noble') {
+        const t = document.createElement('div');
+        t.style.cssText = 'flex-shrink:0;width:32px;height:50px;border-radius:3px;border:1.5px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:18px;';
+        t.textContent = '⚪';
+        t.title = '貴人卡';
+        bar.appendChild(t);
+      }
+
+      // 放下 ⚫（isExtra 放下，且尚未執行的）
+      if (r.isExtra && r.cellType === 'release' && !r.releasedCard) {
+        const t = document.createElement('div');
+        t.style.cssText = 'flex-shrink:0;width:32px;height:50px;border-radius:3px;background:#2C2218;display:flex;align-items:center;justify-content:center;font-size:18px;';
+        t.textContent = '⚫';
+        t.title = '放下卡（未執行）';
+        bar.appendChild(t);
+      }
+    });
+  });
+}
+
+function saveRoll(id) {
+  const player = getPlayer(); if (!player) return;
+  // 判斷這是新增輪次還是編輯已存的（collapsed=true 的才是已存的）
+  let wasCollapsed = false;
+  for (const ph of PHASES) {
+    const r = player.phases[ph].find(r => r.id === id);
+    if (r) { wasCollapsed = r.collapsed; r.collapsed = true; break; }
+  }
+  updateHandBar();
+  autoSave();
   const status = calcPassStatus(player, currentPhase);
   if (status.canPass) {
     saveCurrentSession();
     archiveCurrentSession();
     showPassModal(player, currentPhase, status);
   } else {
-    // 自動新增下一輪
-    addRoll();
+    // 只在新增時才自動加下一輪
+    if (!wasCollapsed) addRoll();
+    else renderPhaseContent();
   }
 }
 
@@ -1189,6 +1605,7 @@ function updateRoll(id, field, val) {
     if (r) { r[field] = val; break; }
   }
   updateDots();
+  if (field === 'cardName') updateHandBar();
 }
 
 function selectCellType(id, key) {
@@ -1235,9 +1652,18 @@ function addExtra(rollId, type) {
   const player = getPlayer(); if (!player) return;
   for (const ph of PHASES) {
     const r = player.phases[ph].find(r=>r.id===rollId);
-    if (r) { if (!r.extras) r.extras=[]; r.extras.push({id:nextId++,type,cardName:'',orientation:'',destinyWinner:'',noblePerson:'',nobleRole:'',nobleDice:'',releasedCard:''}); break; }
+    if (r) {
+      if (!r.extras) r.extras=[];
+      r.extras.push({id:nextId++,type,cardName:'',orientation:'',destinyWinner:'',noblePerson:'',nobleRole:'',nobleDice:'',releasedCard:'',destinyCardType:''});
+      r.collapsed = false;
+      break;
+    }
   }
   renderPhaseContent();
+  setTimeout(() => {
+    const el = document.getElementById('roll-' + rollId);
+    if (el) el.scrollIntoView({behavior:'smooth', block:'start'});
+  }, 60);
 }
 
 function removeExtra(rollId, extraId) {
