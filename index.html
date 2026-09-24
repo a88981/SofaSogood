@@ -1222,12 +1222,8 @@ function renderRoll(r, idx, phaseRounds) {
         const phRolls = player ? player.phases[currentPhase] : [];
         // 手上的牌（不算這一輪自己選的放下）
         const hand = activeInfoRolls(phRolls, r.id).filter(roll => roll.cardName && roll.collapsed && roll.id !== r.id);
-        const groupCount = {};
-        hand.forEach(roll => { const g = cardGroupOf(roll); if (g) groupCount[g] = (groupCount[g]||0) + 1; });
-        // 保底：探索/真相、議題、指引各留 1 張，該組只剩 1 張就不能放
-        const canDrop = roll => { const g = cardGroupOf(roll); return !g || groupCount[g] > 1; };
-        const dropable = hand.filter(canDrop);
-        const locked = [...new Set(hand.filter(roll => !canDrop(roll)).map(cardGroupOf))];
+        // 手上所有的牌都可以放下
+        const dropable = hand;
         const { pending } = releaseCounts(phRolls.filter(roll => roll.id !== r.id));
         const cur = r.releasedCard && !dropable.some(roll => roll.cardName === r.releasedCard) ? r.releasedCard : '';
         return `<div class="rule-note release"><div class="rule-note-title">🍃 放下</div>
@@ -1235,11 +1231,10 @@ function renderRoll(r, idx, phaseRounds) {
           <div class="field-group"><div class="field-label">選擇要放下的牌</div>
             <select onchange="updateRoll(${r.id},'releasedCard',this.value)">
               <option value="">— 選擇 —</option>
-              ${cur?`<option value="${cur}" selected disabled>${cur}（已不符合保底，請重選）</option>`:''}
+              ${cur?`<option value="${cur}" selected disabled>${cur}（已不在手上，請重選）</option>`:''}
               ${dropable.map(roll=>`<option value="${roll.cardName}" ${r.releasedCard===roll.cardName?'selected':''}>${roll.cardName}（${CELL_TYPES.find(c=>c.key===infoTypeOf(roll))?.label||''}）</option>`).join('')}
               ${dropable.length===0?'<option disabled>尚無可放下的牌</option>':''}
             </select>
-            ${locked.length?`<div style="font-size:12px;color:var(--text-muted);margin-top:6px;">${locked.map(g=>GROUP_LABEL[g]).join('、')}只剩 1 張，保底不能放下</div>`:''}
           </div>`;
       }
 
