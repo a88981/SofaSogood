@@ -78,9 +78,10 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15
 /* PHASE STRIP */
 .phase-strip{display:flex;gap:6px;}
 .phase-chip{flex:1;padding:10px 6px;border-radius:var(--radius);border:1px solid var(--border);text-align:center;cursor:pointer;transition:all .2s;}
-.phase-chip.body{background:linear-gradient(135deg,#FAF0EE,#F5E6E2);border-color:rgba(160,48,32,0.2);color:var(--body-c);}
-.phase-chip.mind{background:linear-gradient(135deg,#EEF2FA,#E4EDFA);border-color:rgba(32,80,160,0.2);color:var(--mind-c);}
-.phase-chip.spirit{background:linear-gradient(135deg,#F3EEFA,#EAE0F8);border-color:rgba(96,64,168,0.2);color:var(--spirit-c);}
+.phase-chip.body,.phase-chip.mind,.phase-chip.spirit{background:var(--surface);border-color:var(--border);color:var(--text-dim);}
+.phase-chip.body.done,.phase-chip.body.active{background:linear-gradient(135deg,#FAF0EE,#F5E6E2);border-color:rgba(160,48,32,0.2);color:var(--body-c);}
+.phase-chip.mind.done,.phase-chip.mind.active{background:linear-gradient(135deg,#EEF2FA,#E4EDFA);border-color:rgba(32,80,160,0.2);color:var(--mind-c);}
+.phase-chip.spirit.done,.phase-chip.spirit.active{background:linear-gradient(135deg,#F3EEFA,#EAE0F8);border-color:rgba(96,64,168,0.2);color:var(--spirit-c);}
 .phase-chip.blueprint{background:linear-gradient(135deg,#FAF5E4,#F0E8D0);border-color:rgba(140,110,78,0.25);color:var(--gold);}
 .phase-chip.active.body{background:linear-gradient(135deg,#F5E0DA,#EDD0C8);border-color:var(--body-c);font-weight:600;}
 .phase-chip.active.mind{background:linear-gradient(135deg,#DDE8F8,#CCDAF5);border-color:var(--mind-c);font-weight:600;}
@@ -807,7 +808,16 @@ function savePlayerName(id) {
 
 function switchPlayer(id) {
   currentPlayerId = id;
-  currentPhase = 'body';
+  const player = getPlayer();
+  // 找最新未完成的關卡
+  if (player) {
+    if (!player.phaseDone['body']) currentPhase = 'body';
+    else if (!player.phaseDone['mind']) currentPhase = 'mind';
+    else if (!player.phaseDone['spirit']) currentPhase = 'spirit';
+    else currentPhase = 'blueprint';
+  } else {
+    currentPhase = 'body';
+  }
   renderPlayerTabs();
   renderPhaseContent();
   document.getElementById('scrollArea').scrollTop = 0;
@@ -1476,9 +1486,9 @@ function updateHandBar() {
 
   bar.innerHTML = '<span class="hand-bar-label">手牌</span>';
 
-  PHASES.forEach(ph => {
-    const rolls = player.phases[ph];
-    rolls.forEach(r => {
+  // 只顯示當前關卡的牌
+  const rolls = player.phases[currentPhase] || [];
+  rolls.forEach(r => {
       // 訊息牌
       if (INFO_CELLS.includes(r.cellType) && r.cardName) {
         const img = getCardImg(r.cardName, r.orientation);
@@ -1519,7 +1529,6 @@ function updateHandBar() {
         t.title = '放下卡（未執行）';
         bar.appendChild(t);
       }
-    });
   });
 }
 
@@ -1539,9 +1548,7 @@ function saveRoll(id) {
     archiveCurrentSession();
     showPassModal(player, currentPhase, status);
   } else {
-    // 只在新增時才自動加下一輪
-    if (!wasCollapsed) addRoll();
-    else renderPhaseContent();
+    renderPhaseContent();
   }
 }
 
@@ -1587,9 +1594,9 @@ function closePassModal() {
 
 function goNextPhase(next) {
   closePassModal();
+  const player = getPlayer();
+  if (player) player.phaseDone[currentPhase] = true;
   if (next) {
-    // 計算貴人卡結轉
-    const player = getPlayer();
     if (player) player.nobleCarry[next] = calcNobleCarryForward(player, currentPhase);
     setPhase(next);
   } else {
