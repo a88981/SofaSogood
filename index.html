@@ -107,7 +107,12 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15
 .carry-state{font-size:12px;font-weight:400;opacity:.85;}
 .carry-type{padding:6px 14px;border-radius:20px;border:1.5px solid rgba(160,48,32,.3);background:transparent;color:#A03020;font-size:12px;cursor:pointer;}
 .carry-type.active{background:#C0503C;border-color:#C0503C;color:#fff;}
-.carry-cancel{align-self:flex-start;padding:5px 12px;border-radius:14px;border:1px solid rgba(160,48,32,.3);background:transparent;color:#A03020;font-size:12px;cursor:pointer;}
+.carry-collapsed{cursor:pointer;padding:10px 14px;}
+.carry-arrow{margin-left:auto;font-size:16px;opacity:.7;}
+.carry-actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
+.carry-save{padding:7px 22px;border-radius:14px;border:none;background:#C0503C;color:#fff;font-size:13px;cursor:pointer;}
+.carry-save:disabled{opacity:.4;cursor:default;}
+.carry-cancel{padding:5px 12px;border-radius:14px;border:1px solid rgba(160,48,32,.3);background:transparent;color:#A03020;font-size:12px;cursor:pointer;}
 .noble-carry{background:var(--noble-bg);border:1px solid rgba(128,96,16,.2);border-radius:var(--radius);padding:8px 12px;font-size:13px;color:var(--noble-c);display:flex;align-items:center;gap:6px;}
 
 /* ROUND LOG */
@@ -973,6 +978,16 @@ function renderPhaseContent() {
     for (let ci = 0; ci < carryIn; ci++) {
       const cr = rolls.find(r => r.fromCarry && r.carryIndex === ci);
       const ct = cr ? cr.cellType : '';
+      // 已儲存 → 收起成一行，點一下可再展開修改
+      if (cr && cr.carrySaved && cr.cardName) {
+        const typeLabel = (CARRY_BTNS.find(t => t.key === ct) || {}).label || '';
+        html += `<div class="carry-box carry-collapsed" onclick="editCarryNoble(${ci})">
+          <div class="carry-title">⭐ 上一關帶來的貴人卡${carryIn>1?' #'+(ci+1):''}
+            <span class="carry-state">已換成 ${typeLabel}：${cr.cardName}${cr.orientation?' '+cr.orientation:''}</span>
+            <span class="carry-arrow">›</span></div>
+        </div>`;
+        continue;
+      }
       const sel = cr && ct ? renderInfoCardSel(cr.id, ct, cr.cardName, cr.orientation, ct==='tarot-minor'?cr.tarotGroup:cr.guideGroup) : '';
       html += `<div class="carry-box">
         <div class="carry-title">⭐ 上一關帶來的貴人卡${carryIn>1?' #'+(ci+1):''}
@@ -982,7 +997,10 @@ function renderPhaseContent() {
             ${CARRY_BTNS.map(t=>`<button class="carry-type ${ct===t.key?'active':''}" onclick="useCarryNoble(${ci},'${t.key}')">${t.label}</button>`).join('')}
           </div></div>
         ${sel}
-        ${cr ? `<button class="carry-cancel" onclick="cancelCarryNoble(${ci})">不換，保留為貴人卡</button>` : ''}
+        ${cr ? `<div class="carry-actions">
+          <button class="carry-save" ${cr.cardName?'':'disabled'} onclick="saveCarryNoble(${ci})">儲存</button>
+          <button class="carry-cancel" onclick="cancelCarryNoble(${ci})">不換，保留為貴人卡</button>
+        </div>` : ''}
       </div>`;
     }
   }
@@ -1795,6 +1813,19 @@ function useCarryNoble(ci, type) {
   renderPhaseContent();
   autoSave();
 }
+function saveCarryNoble(ci) {
+  const player = getPlayer(); if (!player) return;
+  const cr = player.phases[currentPhase].find(r => r.fromCarry && r.carryIndex === ci);
+  if (!cr || !cr.cardName) { showToast('請先選擇牌卡'); return; }
+  cr.carrySaved = true;
+  saveRoll(cr.id); // 收起、存檔並檢查是否過關
+}
+function editCarryNoble(ci) {
+  const player = getPlayer(); if (!player) return;
+  const cr = player.phases[currentPhase].find(r => r.fromCarry && r.carryIndex === ci);
+  if (cr) cr.carrySaved = false;
+  renderPhaseContent();
+}
 function cancelCarryNoble(ci) {
   const player = getPlayer(); if (!player) return;
   player.phases[currentPhase] = player.phases[currentPhase].filter(r => !(r.fromCarry && r.carryIndex === ci));
@@ -1835,7 +1866,7 @@ function updateRoll(id, field, val) {
   if (field === 'cardName') {
     const pl = getPlayer();
     const cr = pl && pl.phases[currentPhase].find(r => r.id === id);
-    if (cr && cr.fromCarry) { saveRoll(id); return; }
+    if (cr && cr.fromCarry) { renderPhaseContent(); autoSave(); return; }
   }
 }
 
