@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>答案 遊玩紀錄</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+:root {
+  --bg: #f5f4f1; --surface: #fff; --card: #fafaf8;
+  --border: rgba(0,0,0,0.08); --border-strong: rgba(0,0,0,0.16);
+  --text: #1a1814; --text-muted: #6b6560; --text-dim: #b0aba4;
+  --gold: #9a7040; --gold-dim: rgba(154,112,64,0.09); --gold-border: rgba(154,112,64,0.3);
+  --body-c: #1a7a50; --body-bg: #edf7f2;
+  --mind-c: #1a50a0; --mind-bg: #edf2fb;
+  --spirit-c: #7030b0; --spirit-bg: #f3edfb;
+  --tarot-bg: #fff4e8; --tarot-c: #a05010;
+  --issue-bg: #e8f0ff; --issue-c: #1040a0;
+  --guide-bg: #f0e8ff; --guide-c: #6020a0;
+  --noble-bg: #f8f4e0; --noble-c: #806010;
+  --release-bg: #ebebf8; --release-c: #3030a0;
+  --destiny-bg: #edfaed; --destiny-c: #1a6a1a;
+  --pass-bg: #edfaf3; --pass-c: #1a7a50;
+  --warn-bg: #fffbeb; --warn-c: #92400e;
+  --err-bg: #fff5f5; --err-c: #dc2626;
+  --radius: 10px; --tab-h: 62px; --header-h: 54px; --header-status-h: 36px;
+  --font: 'Georgia','Noto Serif TC',serif;
+  --sans: -apple-system,'Helvetica Neue','Noto Sans TC',sans-serif;
+}
+html,body{height:100%;overflow:hidden;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px;}
+
+/* HEADER */
+.header{position:fixed;top:0;left:0;right:0;background:var(--surface);border-bottom:1px solid var(--border);z-index:100;}
+.header-top{height:54px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;}
+.header-status{padding:0 14px 8px;}
+.header-status:empty{display:none;}
+.status-bar{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:12px;width:100%;}
+.status-bar.pass{background:var(--pass-bg);color:var(--pass-c);}
+.status-bar.warn{background:var(--warn-bg);color:var(--warn-c);}
+.status-bar.limit{background:var(--err-bg);color:var(--err-c);}
+.title{font-family:var(--font);font-size:18px;color:var(--gold);letter-spacing:.04em;flex-shrink:0;}
+.player-tabs{display:flex;gap:5px;flex:1;justify-content:center;}
+.ptab{padding:6px 12px;border-radius:20px;border:1px solid var(--border-strong);background:none;font-size:13px;color:var(--text-muted);cursor:pointer;white-space:nowrap;}
+.ptab.active{background:var(--gold);color:#fff;border-color:var(--gold);}
+.icon-btn{width:36px;height:36px;border-radius:50%;border:1px solid var(--border-strong);background:var(--surface);color:var(--text-muted);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;flex-shrink:0;}
+
+/* SCROLL */
+.scroll-area{position:fixed;top:calc(var(--header-h) + var(--header-status-h));left:0;right:0;bottom:var(--tab-h);overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 14px 80px;display:flex;flex-direction:column;gap:12px;}
+
+/* PHASE STRIP */
+.phase-strip{display:flex;gap:6px;}
+.phase-chip{flex:1;padding:10px 6px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface);text-align:center;cursor:pointer;transition:all .15s;}
+.phase-chip.active.body{background:var(--body-bg);border-color:var(--body-c);color:var(--body-c);}
+.phase-chip.active.mind{background:var(--mind-bg);border-color:var(--mind-c);color:var(--mind-c);}
+.phase-chip.active.spirit{background:var(--spirit-bg);border-color:var(--spirit-c);color:var(--spirit-c);}
+.phase-chip.done::after{content:'✓';display:block;font-size:11px;opacity:.7;}
+.pc-name{font-size:13px;font-weight:600;}
+.pc-count{font-size:11px;opacity:.65;margin-top:2px;}
+
+/* PASS STATUS */
+.pass-banner{border-radius:var(--radius);padding:10px 14px;font-size:13px;display:flex;align-items:center;gap:8px;}
+.pass-banner.pass{background:var(--pass-bg);color:var(--pass-c);}
+.pass-banner.warn{background:var(--warn-bg);color:var(--warn-c);}
+.pass-banner.limit{background:var(--err-bg);color:var(--err-c);}
+.pass-icon{font-size:16px;flex-shrink:0;}
+.pass-text{flex:1;line-height:1.4;}
+.pass-detail{font-size:12px;opacity:.8;margin-top:2px;}
+
+/* NOBLE CARRY */
+.noble-carry{background:var(--noble-bg);border:1px solid rgba(128,96,16,.2);border-radius:var(--radius);padding:8px 12px;font-size:13px;color:var(--noble-c);display:flex;align-items:center;gap:6px;}
+
+/* ROUND LOG */
+.round-log{display:flex;flex-direction:column;gap:8px;}
+.roll-entry{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+.roll-header{padding:10px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);}
+.roll-meta{display:flex;align-items:center;gap:8px;}
+.roll-num{font-size:12px;color:var(--text-muted);font-weight:500;}
+.roll-dice{font-size:13px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:2px 8px;color:var(--text);}
+.cell-badge{font-size:12px;padding:3px 10px;border-radius:20px;}
+.cell-badge.tarot{background:var(--tarot-bg);color:var(--tarot-c);}
+.cell-badge.issue{background:var(--issue-bg);color:var(--issue-c);}
+.cell-badge.guide{background:var(--guide-bg);color:var(--guide-c);}
+.cell-badge.noble{background:var(--noble-bg);color:var(--noble-c);}
+.cell-badge.release{background:var(--release-bg);color:var(--release-c);}
+.cell-badge.destiny{background:var(--destiny-bg);color:var(--destiny-c);}
+.cell-badge.golden{background:#fffbe8;color:#92680a;}
+.ct-btn.active.golden{background:#fffbe8;color:#92680a;border-color:#92680a;}
+.rule-note.golden{background:#fffbe8;border:1px solid rgba(146,104,10,.2);}
+.del-btn{width:28px;height:28px;border-radius:50%;border:none;background:none;color:var(--text-dim);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.del-btn:active{background:#fee2e2;color:#dc2626;}
+.roll-body{padding:12px 14px;display:flex;flex-direction:column;gap:10px;}
+
+/* PHOTO AREA */
+.card-img{width:100%;max-height:200px;object-fit:contain;border-radius:var(--radius);display:block;background:var(--bg);}
+.ai-scanning{position:absolute;inset:0;background:rgba(255,255,255,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;font-size:13px;color:var(--text-muted);}
+.spinner{width:24px;height:24px;border:3px solid var(--border-strong);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.ai-result{background:#f0faf5;border:1px solid rgba(26,122,80,.25);border-radius:var(--radius);padding:8px 12px;display:flex;align-items:flex-start;justify-content:space-between;gap:6px;}
+.ai-result-text{font-size:12px;color:#1a7a50;line-height:1.5;flex:1;}
+.ai-dismiss{background:none;border:none;color:#1a7a50;font-size:16px;cursor:pointer;opacity:.6;padding:0 2px;}
+
+/* FIELDS */
+.field-group{display:flex;flex-direction:column;gap:6px;}
+.field-label{font-size:12px;color:var(--text-muted);font-weight:500;}
+.ct-btns{display:flex;flex-wrap:wrap;gap:6px;}
+.ct-btn{font-size:12px;padding:7px 12px;border-radius:20px;border:1px solid var(--border-strong);background:var(--bg);color:var(--text-muted);cursor:pointer;white-space:nowrap;}
+.ct-btn.active.tarot{background:var(--tarot-bg);color:var(--tarot-c);border-color:var(--tarot-c);}
+.ct-btn.active.issue{background:var(--issue-bg);color:var(--issue-c);border-color:var(--issue-c);}
+.ct-btn.active.guide{background:var(--guide-bg);color:var(--guide-c);border-color:var(--guide-c);}
+.ct-btn.active.noble{background:var(--noble-bg);color:var(--noble-c);border-color:var(--noble-c);}
+.ct-btn.active.release{background:var(--release-bg);color:var(--release-c);border-color:var(--release-c);}
+.ct-btn.active.destiny{background:var(--destiny-bg);color:var(--destiny-c);border-color:var(--destiny-c);}
+select,input[type="text"],textarea{width:100%;background:var(--bg);border:1px solid var(--border-strong);border-radius:var(--radius);color:var(--text);font-family:var(--sans);font-size:15px;padding:10px 12px;outline:none;-webkit-appearance:none;color-scheme:light;}
+select:focus,input:focus,textarea:focus{border-color:var(--gold);}
+input::placeholder,textarea::placeholder{color:var(--text-dim);}
+textarea{resize:none;line-height:1.5;min-height:60px;}
+.orient-btns{display:flex;gap:8px;}
+.orient-btn{flex:1;padding:9px;border-radius:var(--radius);border:1px solid var(--border-strong);background:var(--bg);color:var(--text-muted);font-size:13px;cursor:pointer;text-align:center;}
+.orient-btn.active{background:var(--tarot-bg);color:var(--tarot-c);border-color:var(--tarot-c);font-weight:600;}
+
+/* ADD ROLL BTN */
+.add-roll-btn{width:100%;padding:13px;border-radius:var(--radius);border:1px dashed var(--gold-border);background:var(--gold-dim);color:var(--gold);font-size:14px;cursor:pointer;text-align:center;}
+.add-roll-btn:active{opacity:.8;}
+
+/* FAB */
+.fab-unused{display:none;}
+
+/* TAB BAR */
+.tab-bar{position:fixed;bottom:0;left:0;right:0;height:var(--tab-h);background:var(--surface);border-top:1px solid var(--border);display:flex;z-index:100;}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:none;background:none;cursor:pointer;padding:6px 0;position:relative;}
+.tab-icon{font-size:17px;color:var(--text-dim);}
+.tab-label{font-size:10px;color:var(--text-dim);}
+.tab.active .tab-icon,.tab.active .tab-label{color:var(--gold);}
+.tab-dot{position:absolute;top:7px;right:calc(50% - 13px);width:6px;height:6px;border-radius:50%;background:var(--gold);display:none;}
+.tab-dot.show{display:block;}
+
+/* DRAWER */
+.drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:200;opacity:0;pointer-events:none;transition:opacity .25s;}
+.drawer-overlay.open{opacity:1;pointer-events:all;}
+.drawer{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-radius:20px 20px 0 0;z-index:201;transform:translateY(100%);transition:transform .3s cubic-bezier(.32,.72,0,1);max-height:90vh;display:flex;flex-direction:column;}
+.drawer.open{transform:translateY(0);}
+.drawer-handle{width:36px;height:4px;background:var(--border-strong);border-radius:2px;margin:12px auto 0;flex-shrink:0;}
+.drawer-title{font-size:16px;font-weight:600;padding:14px 18px 12px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.drawer-body{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 18px;display:flex;flex-direction:column;gap:14px;flex:1;}
+
+/* DRAWER INTERNALS */
+.info-section{display:flex;flex-direction:column;gap:14px;}
+.info-label{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-dim);margin-bottom:4px;}
+.summary-grid{display:flex;flex-direction:column;gap:8px;}
+.scard{background:var(--card);border-radius:var(--radius);overflow:hidden;border:1px solid var(--border);}
+.scard-hd{padding:9px 14px;font-size:13px;font-weight:500;display:flex;justify-content:space-between;}
+.scard-hd.body{background:var(--body-bg);color:var(--body-c);}
+.scard-hd.mind{background:var(--mind-bg);color:var(--mind-c);}
+.scard-hd.spirit{background:var(--spirit-bg);color:var(--spirit-c);}
+.scard-bd{padding:8px 14px;display:flex;flex-direction:column;gap:4px;}
+.scard-row{font-size:12px;color:var(--text-muted);display:flex;gap:6px;}
+.scard-idx{color:var(--text-dim);flex-shrink:0;}
+.blueprint-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);border-radius:var(--radius);overflow:hidden;border:1px solid var(--gold-border);}
+.bp-cell{background:var(--card);padding:9px;display:flex;flex-direction:column;gap:2px;}
+.bp-label{font-size:10px;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;}
+.bp-val{font-size:12px;color:var(--text-muted);font-style:italic;min-height:24px;}
+.export-btns{display:flex;flex-direction:column;gap:8px;}
+.export-btn{width:100%;padding:13px;border-radius:var(--radius);border:1px solid var(--border-strong);background:var(--bg);color:var(--text);font-size:14px;cursor:pointer;text-align:center;}
+.export-btn.primary{background:var(--gold);border-color:var(--gold);color:#fff;font-weight:500;}
+.export-btn:active{opacity:.8;}
+
+/* SETUP SCREEN */
+.setup-screen{display:flex;flex-direction:column;gap:16px;}
+.setup-title{font-size:16px;font-weight:600;color:var(--text);}
+.setup-subtitle{font-size:13px;color:var(--text-muted);margin-top:-8px;}
+.player-setup-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;display:flex;flex-direction:column;gap:10px;}
+.player-setup-hd{display:flex;align-items:center;justify-content:space-between;}
+.player-setup-label{font-size:13px;font-weight:600;color:var(--text);}
+.player-color-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.start-btn{width:100%;padding:14px;border-radius:var(--radius);background:var(--gold);border:none;color:#fff;font-size:16px;font-weight:600;cursor:pointer;}
+.start-btn:active{opacity:.8;}
+
+.empty-state{text-align:center;padding:40px 20px;color:var(--text-dim);font-size:14px;line-height:2;}
+.toast{position:fixed;bottom:calc(var(--tab-h)+10px);left:50%;transform:translateX(-50%) translateY(8px);background:#1a3a1a;border:1px solid rgba(26,122,80,.5);color:#4ecb8d;padding:9px 18px;border-radius:20px;font-size:13px;opacity:0;white-space:nowrap;pointer-events:none;z-index:300;transition:all .2s;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+::-webkit-scrollbar{width:0;}
+input[type="file"]{display:none;}
+
+/* SECTION DIVIDER */
+.section-divider{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-dim);display:flex;align-items:center;gap:8px;}
+.section-divider::before,.section-divider::after{content:'';flex:1;height:1px;background:var(--border);}
+.rule-note{border-radius:var(--radius);padding:10px 12px;}
+.rule-note.noble{background:var(--noble-bg);border:1px solid rgba(128,96,16,.2);}
+.rule-note.release{background:#f0f8f0;border:1px solid rgba(26,100,26,.2);}
+.rule-note.destiny{background:var(--destiny-bg);border:1px solid rgba(26,106,26,.2);}
+.rule-note-title{font-size:13px;font-weight:600;margin-bottom:5px;color:var(--text);}
+.rule-note-body{font-size:12px;color:var(--text-muted);line-height:1.8;}
+.guide-groups{display:flex;flex-direction:column;gap:10px;}
+.guide-group-label{font-size:12px;font-weight:600;margin-bottom:5px;letter-spacing:.02em;}
+.guide-btns{display:flex;flex-wrap:wrap;gap:5px;}
+.guide-btn{font-size:12px;padding:6px 10px;border-radius:16px;border:1px solid var(--border-strong);background:var(--bg);color:var(--text-muted);cursor:pointer;white-space:nowrap;transition:all .12s;}
+.suit-btns{display:flex;gap:10px;justify-content:center;}
+.suit-btn{width:64px;height:64px;border-radius:50%;border:2px solid var(--border-strong);background:var(--bg);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:all .15s;}
+.suit-btn:active{transform:scale(.93);}
+.suit-btn.active{border-color:var(--gold);background:var(--gold-dim);box-shadow:0 0 0 3px var(--gold-border);}
+.suit-icon{font-size:22px;line-height:1;}
+.suit-name{font-size:11px;color:var(--text-muted);font-weight:500;}
+.suit-btn.active .suit-name{color:var(--gold);}
+.extra-section{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--border);padding-top:12px;margin-top:4px;}
+.extra-title{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);}
+.extra-add-row{display:flex;gap:6px;flex-wrap:wrap;}
+.extra-add-btn{font-size:12px;padding:6px 12px;border-radius:20px;border:1px dashed var(--border-strong);background:none;color:var(--text-muted);cursor:pointer;}
+.extra-add-btn:active{background:var(--bg);}
+.extra-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+.extra-card-hd{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--border);}
+.extra-card-label{font-size:13px;font-weight:500;color:var(--text-muted);}
+.extra-card-body{padding:10px 12px;display:flex;flex-direction:column;gap:10px;}
+.roll-header{cursor:pointer;user-select:none;}
+.collapse-arrow{font-size:16px;color:var(--text-dim);transition:transform .15s;}
+.roll-entry.collapsed .roll-header{border-bottom:none;}
+.phase-chip.active.blueprint{background:#fff9e8;border-color:#92680a;color:#92680a;}
+.bp-phase-block{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:4px;}
+.bp-phase-title{padding:10px 14px;font-size:13px;font-weight:600;}
+.bp-phase-title.body{background:var(--body-bg);color:var(--body-c);}
+.bp-phase-title.mind{background:var(--mind-bg);color:var(--mind-c);}
+.bp-phase-title.spirit{background:var(--spirit-bg);color:var(--spirit-c);}
+.bp-card-row{padding:12px 14px;display:flex;flex-direction:column;gap:12px;}
+.bp-card-slot{display:flex;flex-direction:column;gap:6px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+.bp-card-slot:last-child{border-bottom:none;padding-bottom:0;}
+.bp-slot-label{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);}
+.bp-card-img{width:100%;max-height:180px;object-fit:contain;border-radius:var(--radius);background:var(--bg);}
+.bp-empty{font-size:12px;color:var(--text-dim);font-style:italic;}
+</style>
+</head>
+<body>
+
+<div class="header" id="mainHeader">
+  <div class="header-top">
+    <span class="title">答案</span>
+    <button class="icon-btn" onclick="openDrawer()">☰</button>
+  </div>
+  <div class="header-status" id="headerStatus"></div>
+</div>
+
+<div class="scroll-area" id="scrollArea">
+  <div id="mainContent"></div>
+</div>
+
+<div class="tab-bar" id="tabBar">
+  <div id="playerTabsBar" style="display:contents;"></div>
+  <button class="tab" id="tab-overview" onclick="openDrawer()">
+    <span class="tab-icon">📋</span><span class="tab-label">總覽</span>
+  </button>
+</div>
+
+
+
+<div class="drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-handle"></div>
+  <div class="drawer-title">遊戲總覽</div>
+  <div class="drawer-body" id="drawerBody"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+// ── CONSTANTS ──
+const PHASES = ['body','mind','spirit'];
+const PHASE_NAMES = {body:'身',mind:'心',spirit:'靈'};
+const PHASE_DESC  = {body:'身 · 行動層',mind:'心 · 情感層',spirit:'靈 · 靈魂層'};
+const PLAYER_COLORS = ['#9a7040','#1a7a50','#1a50a0','#7030b0'];
+const ZODIAC_GROUPS = {
+  fire:['白羊座','獅子座','射手座'],
+  earth:['金牛座','處女座','摩羯座'],
+  air:['雙子座','天秤座','水瓶座'],
+  water:['巨蟹座','天蠍座','雙魚座']
+};
+const ZODIAC_LABEL = {fire:'火象',earth:'土象',air:'風象',water:'水象'};
+
+const CELL_TYPES = [
+  {key:'noble',        label:'貴人',   cls:'noble'},
+  {key:'release',      label:'放下',   cls:'release'},
+  {key:'destiny',      label:'命運之輪',cls:'destiny'},
+  {key:'issue',        label:'議題',   cls:'issue'},
+  {key:'tarot-minor',  label:'真相',   cls:'tarot'},
+  {key:'tarot',        label:'探索',   cls:'tarot'},
+  {key:'guide',        label:'指引',   cls:'guide'},
+];
+const CELL_CLASS = {tarot:'tarot','tarot-minor':'tarot',issue:'issue',guide:'guide',noble:'noble',release:'release',destiny:'destiny'};
+const INFO_CELLS = ['tarot','tarot-minor','issue','guide','golden']; // 訊息卡類型
+
+const CARD_OPTIONS = {
+  'tarot': ['愚者','魔術師','女祭司','皇后','皇帝','教皇','戀人','戰車','力量','隱者','命運之輪','正義','倒吊人','死神','節制','惡魔','高塔','星星','月亮','太陽','審判','世界'],
+  'tarot-minor': ['權杖A','權杖2','權杖3','權杖4','權杖5','權杖6','權杖7','權杖8','權杖9','權杖10','權杖侍者','權杖騎士','權杖皇后','權杖國王','聖杯A','聖杯二','聖杯三','聖杯四','聖杯五','聖杯六','聖杯七','聖杯八','聖杯九','聖杯十','聖杯侍者','聖杯騎士','聖杯皇后','聖杯國王','寶劍A','寶劍二','寶劍三','寶劍四','寶劍五','寶劍六','寶劍七','寶劍八','寶劍九','寶劍十','寶劍侍者','寶劍騎士','寶劍皇后','寶劍國王','錢幣A','錢幣2','錢幣3','錢幣4','錢幣5','錢幣6','錢幣7','錢幣8','錢幣9','錢幣10','錢幣侍者','錢幣騎士','錢幣皇后','錢幣國王'],
+  'issue': ['贏','人際','依賴','健康','傲慢','兩難','公平','冷漠','匱乏','壓抑','失落','嫉妒','恐懼','批判','抗拒','接納','控制','放棄','期望','焦慮','癮頭','突破','耐心','背叛','舊傷','衝動','貪心','逃避','逃離','雜音','不滿足','信任感','受害者','報復心','存在感','孤立感','安全感','得失心','情緒化','拯救者','無力感','白日夢','罪惡感','自卑感','舊模式','亂發脾氣','內在誠信','完美主義','害怕失去','害怕失敗','家族議題','情緒勒索','我是對的','暗中破壞','未來焦慮','母親關係','活在過去','渴求認同','無價值感','父親關係','缺乏連結','自以為是','自我封閉','自我懲罰','自我懷疑','自我犧牲','躊躇不前','鑽牛角尖','小聰明投機','心碎的故事','死亡的誘惑','限制性信念'],
+  'guide': ['愛自己','創造者','感恩','釋放控制','活在當下','熱情','等待','好玩的人生','蛻變','冒險','歡慶','邁出下一步','要有決心','不要猶豫','展現活力','幫助他人','你是夠好的','拿回你的力量','療癒母親關係','夥伴關係','尋求寬恕','聽從直覺','保持樂觀','釋放情緒阻塞','休息','接納','不忘初心','更高層次的親密關係','進入五次元','療癒舊傷','寬恕','慢下來','蓄勢待發','關注內在','敞開對話','傾聽','學習','重新考慮','信心','新的開始','尋求幫助','奇蹟','靈魂使命','療癒父親關係','接近大自然','創意帶來財富','淨化你的空間','領袖力','謹慎規劃','調整作息','放下控制','匱乏是假象','物質享受','允許死去','內在本源力量','修復身體'],
+  'noble': [], 'release': [], 'destiny': []
+};
+const TAROT_MINOR_GROUPS = [
+  { name:'🔥 火（一）權杖', icon:'🔥', suit:'權杖', cards:['權杖A','權杖2','權杖3','權杖4','權杖5','權杖6','權杖7','權杖8','權杖9','權杖10','權杖侍者','權杖騎士','權杖皇后','權杖國王'] },
+  { name:'💧 水（二）聖杯', icon:'💧', suit:'聖杯', cards:['聖杯A','聖杯二','聖杯三','聖杯四','聖杯五','聖杯六','聖杯七','聖杯八','聖杯九','聖杯十','聖杯侍者','聖杯騎士','聖杯皇后','聖杯國王'] },
+  { name:'🌬️ 風（三）寶劍', icon:'🌬️', suit:'寶劍', cards:['寶劍A','寶劍二','寶劍三','寶劍四','寶劍五','寶劍六','寶劍七','寶劍八','寶劍九','寶劍十','寶劍侍者','寶劍騎士','寶劍皇后','寶劍國王'] },
+  { name:'🌿 土（四）錢幣', icon:'🌿', suit:'錢幣', cards:['錢幣A','錢幣2','錢幣3','錢幣4','錢幣5','錢幣6','錢幣7','錢幣8','錢幣9','錢幣10','錢幣侍者','錢幣騎士','錢幣皇后','錢幣國王'] },
+];
+
+const GUIDE_GROUPS = [
+  { name:'🌬️ 風', icon:'🌬️', suit:'風', color:'#6020a0', colorBg:'#f0e8ff',
+    cards: ['奇蹟','傾聽','寬恕','信心','學習','慢下來','尋求幫助','關注內在','敞開對話','蓄勢待發','新的開始','釋放控制','重新考慮','靈魂使命'] },
+  { name:'💧 水', icon:'💧', suit:'水', color:'#1a50a0', colorBg:'#edf2fb',
+    cards: ['休息','活在當下','夥伴關係','尋求寬恕','聽從直覺','不忘初心','保持樂觀','愛自己','療癒舊傷','療癒母親關係','進入五次元','更高層次的親密關係','釋放情緒阻塞'] },
+  { name:'🔥 火', icon:'🔥', suit:'火', color:'#b03010', colorBg:'#fff0eb',
+    cards: ['熱情','蛻變','冒險','等待','歡慶','創造者','不要猶豫','邁出下一步','展現活力','幫助他人','要有決心','你是夠好的','好玩的人生','拿回你的力量'] },
+  { name:'🌿 土', icon:'🌿', suit:'土', color:'#1a6a20', colorBg:'#edf7ed',
+    cards: ['感恩','領袖力','物質享受','放下控制','允許死去','修復身體','調整作息','謹慎規劃','接近大自然','匱乏是假象','淨化你的空間','內在本源力量','療癒父親關係','創意帶來財富'] },
+];
+
+const CARD_IMAGES = (()=>{
+const b='https://dnvsaoxbxb07y.cloudfront.net/card-assets';
+const sp=['愚者','魔術師','女祭司','皇后','皇帝','教皇','戀人','戰車','力量','隱者','命運之輪','正義','倒吊人','死神','節制','惡魔','高塔','星星','月亮','太陽','審判','世界'];
+const ex=['權杖A','權杖2','權杖3','權杖4','權杖5','權杖6','權杖7','權杖8','權杖9','權杖10','權杖侍者','權杖騎士','權杖皇后','權杖國王','聖杯A','聖杯二','聖杯三','聖杯四','聖杯五','聖杯六','聖杯七','聖杯八','聖杯九','聖杯十','聖杯侍者','聖杯騎士','聖杯皇后','聖杯國王','寶劍A','寶劍二','寶劍三','寶劍四','寶劍五','寶劍六','寶劍七','寶劍八','寶劍九','寶劍十','寶劍侍者','寶劍騎士','寶劍皇后','寶劍國王','錢幣A','錢幣2','錢幣3','錢幣4','錢幣5','錢幣6','錢幣7','錢幣8','錢幣9','錢幣10','錢幣侍者','錢幣騎士','錢幣皇后','錢幣國王'];
+const iss=[['死亡的誘惑','70_front-v20260622114943.png'],['存在感','71_front-v20260622114954.png'],['情緒勒索','72_front-v20260622114949.png'],['逃離','1.jpg'],['未來焦慮','2.jpg'],['失落','3.jpg'],['活在過去','4.jpg'],['害怕失敗','5.jpg'],['內在誠信','6.jpg'],['背叛','7.jpg'],['缺乏連結','8.jpg'],['贏','9.jpg'],['亂發脾氣','10.jpg'],['家族議題','11.jpg'],['安全感','12.jpg'],['報復心','13.jpg'],['信任感','14.jpg'],['不滿足','15.jpg'],['放棄','16.jpg'],['癮頭','17.jpg'],['控制','18.jpg'],['抗拒','19.jpg'],['渴求認同','20.jpg'],['害怕失去','21.jpg'],['完美主義','22.jpg'],['傲慢','23.jpg'],['嫉妒','24.jpg'],['壓抑','25.jpg'],['逃避','26.jpg'],['兩難','27.jpg'],['批判','28.jpg'],['自我犧牲','29.jpg'],['鑽牛角尖','30.jpg'],['小聰明投機','31.jpg'],['躊躇不前','32.jpg'],['雜音','33.jpg'],['匱乏','34.jpg'],['接納','35.jpg'],['母親關係','36.jpg'],['貪心','37.jpg'],['暗中破壞','38.jpg'],['父親關係','39.jpg'],['限制性信念','40.jpg'],['冷漠','41.jpg'],['依賴','42.jpg'],['衝動','43.jpg'],['孤立感','44.jpg'],['心碎的故事','45.jpg'],['自我封閉','46.jpg'],['突破','47.jpg'],['焦慮','48.jpg'],['耐心','49.jpg'],['拯救者','50.jpg'],['白日夢','51.jpg'],['自卑感','52.jpg'],['舊模式','53.jpg'],['受害者','54.jpg'],['自以為是','55.jpg'],['無價值感','56.jpg'],['罪惡感','57.jpg'],['得失心','58.jpg'],['公平','59.jpg'],['期望','60.jpg'],['情緒化','61.jpg'],['舊傷','62.jpg'],['我是對的','63.jpg'],['恐懼','64.jpg'],['無力感','65.jpg'],['健康','66.jpg'],['自我懷疑','67.jpg'],['人際','68.jpg'],['自我懲罰','69.jpg']];
+const gui=[['愛自己','54_front-v20260622114928.png'],['創造者','53_front-v20260622114922.png'],['感恩','55_front-v20260622114933.png'],['釋放控制','56_front-v20260622114938.png'],['活在當下','57.jpg'],['熱情','1.jpg'],['等待','2.jpg'],['好玩的人生','3.jpg'],['蛻變','4.jpg'],['冒險','5.jpg'],['歡慶','6.jpg'],['邁出下一步','7.jpg'],['要有決心','8.jpg'],['不要猶豫','9.jpg'],['展現活力','10.jpg'],['幫助他人','11.jpg'],['你是夠好的','12.jpg'],['拿回你的力量','13.jpg'],['療癒母親關係','14.jpg'],['夥伴關係','15.jpg'],['尋求寬恕','16.jpg'],['聽從直覺','17.jpg'],['保持樂觀','18.jpg'],['釋放情緒阻塞','19.jpg'],['休息','21.jpg'],['接納','22.jpg'],['不忘初心','23.jpg'],['更高層次的親密關係','24.jpg'],['進入五次元','25.jpg'],['療癒舊傷','26.jpg'],['寬恕','27.jpg'],['慢下來','28.jpg'],['蓄勢待發','29.jpg'],['關注內在','30.jpg'],['敞開對話','31.jpg'],['傾聽','32.jpg'],['學習','33.jpg'],['重新考慮','34.jpg'],['信心','35.jpg'],['新的開始','36.jpg'],['尋求幫助','37.jpg'],['奇蹟','38.jpg'],['靈魂使命','39.jpg'],['療癒父親關係','40.jpg'],['接近大自然','41.jpg'],['創意帶來財富','42.jpg'],['淨化你的空間','43.jpg'],['領袖力','44.jpg'],['謹慎規劃','45.jpg'],['調整作息','46.jpg'],['放下控制','47.jpg'],['匱乏是假象','48.jpg'],['物質享受','49.jpg'],['允許死去','50.jpg'],['內在本源力量','51.jpg'],['修復身體','52.jpg']];
+const m={};
+sp.forEach((n,i)=>m[n]={u:`${b}/spirit_cards/${i}_upright.jpg`,r:`${b}/spirit_cards/${i}_reversed.jpg`});
+ex.forEach((n,i)=>m[n]={u:`${b}/experience_cards/${i+1}_upright.jpg`,r:`${b}/experience_cards/${i+1}_reversed.jpg`});
+iss.forEach(([n,f])=>m[n]=`${b}/issue_cards/${f}`);
+gui.forEach(([n,f])=>m[n]=`${b}/guildance_cards/${f}`);
+return m;
+})();
+
+function getCardImg(name, orientation) {
+  const v = CARD_IMAGES[name];
+  if (!v) return null;
+  if (typeof v === 'string') return v;
+  return orientation === '逆位' ? v.r : v.u;
+}
+
+const ALL_CARDS = [];
+
+// ── GAME STATE ──
+let gameStarted = false;
+let players = []; // [{id, name, zodiac, topic, color, phases:{body:[rolls],mind:[],spirit:[]}, nobleCarry:{body:0,mind:0,spirit:0}, phaseDone:{body:false,...}, insight:'', action:''}]
+let currentPlayerId = 0;
+let currentPhase = 'body';
+let nextId = 1;
+
+// ── PASS LOGIC ──
+function calcPassStatus(player, phase) {
+  const rolls = player.phases[phase];
+  const infoCards = rolls.filter(r => INFO_CELLS.includes(r.cellType));
+  const nobles = rolls.filter(r => r.cellType === 'noble').length;
+  const nobleCarry = player.nobleCarry[phase] || 0;
+  const totalNobles = nobles + nobleCarry;
+
+  const hasTarot  = infoCards.some(r => r.cellType === 'tarot' || r.cellType === 'tarot-minor');
+  const hasIssue  = infoCards.some(r => r.cellType === 'issue');
+  const hasGuide  = infoCards.some(r => r.cellType === 'guide');
+  const has3Types = hasTarot && hasIssue && hasGuide;
+
+  const infoCount = infoCards.length;
+  const hasNoble  = totalNobles >= 1;
+
+  // 上限 9 張訊息卡
+  const atLimit = infoCount >= 9;
+
+  // 過關條件 A: 4張訊息卡(含3種) + 1張貴人卡
+  const passA = infoCount >= 4 && has3Types && hasNoble;
+  // 過關條件 B: 7張訊息卡(任意) + 1張貴人卡
+  const passB = infoCount >= 7 && hasNoble;
+
+  const canPass = passA || passB;
+
+  const missing = [];
+  if (!hasTarot) missing.push('塔羅牌');
+  if (!hasIssue) missing.push('議題卡');
+  if (!hasGuide) missing.push('指引卡');
+  if (!hasNoble) missing.push('貴人卡×1');
+
+  return { canPass, passA, passB, infoCount, has3Types, hasNoble, missing, atLimit, totalNobles };
+}
+
+function calcNobleCarryForward(player, phase) {
+  const rolls = player.phases[phase];
+  const nobles = rolls.filter(r => r.cellType === 'noble').length;
+  const carry  = player.nobleCarry[phase] || 0;
+  const used   = (nobles + carry) >= 1 ? 1 : 0;
+  return Math.max(0, nobles + carry - used);
+}
+
+// ── HELPERS ──
+function getPlayer() { return players.find(p => p.id === currentPlayerId); }
+function getRolls() { const p = getPlayer(); return p ? p.phases[currentPhase] : []; }
+
+// ── SETUP ──
+function renderSetup() {
+  const numPlayers = players.length || 2;
+  let html = `<div class="setup-screen">
+    <div>
+      <div class="setup-title">🃏 答案・遊戲設定</div>
+      <div class="setup-subtitle" style="margin-top:6px;font-size:13px;color:var(--text-muted)">請填入玩家資料後開始遊戲</div>
+    </div>
+    <div class="field-group">
+      <div class="field-label">遊戲人數</div>
+      <select onchange="initPlayers(parseInt(this.value))">
+        <option value="2" ${numPlayers===2?'selected':''}>2 人</option>
+        <option value="3" ${numPlayers===3?'selected':''}>3 人</option>
+        <option value="4" ${numPlayers===4?'selected':''}>4 人</option>
+      </select>
+    </div>`;
+
+  players.forEach((p, i) => {
+    const allZodiacs = Object.entries(ZODIAC_GROUPS).flatMap(([k,vs]) => vs.map(z => ({z,k})));
+    html += `<div class="player-setup-card">
+      <div class="player-setup-hd">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="player-color-dot" style="background:${PLAYER_COLORS[i]}"></div>
+          <span class="player-setup-label">玩家 ${i+1}</span>
+        </div>
+      </div>
+      <input type="text" placeholder="姓名（可選）" value="${p.name}" oninput="updatePlayerSetup(${p.id},'name',this.value)">
+      <div class="field-group">
+        <div class="field-label">太陽星座（決定起點）</div>
+        <select onchange="updatePlayerSetup(${p.id},'zodiac',this.value)">
+          <option value="">— 選擇 —</option>
+          ${Object.entries(ZODIAC_GROUPS).map(([k,vs]) =>
+            vs.map(z => `<option value="${z}" ${p.zodiac===z?'selected':''}>${ZODIAC_LABEL[k]}・${z}</option>`).join('')
+          ).join('')}
+        </select>
+      </div>
+      <div class="field-group">
+        <div class="field-label">今次帶入的議題</div>
+        <textarea rows="2" placeholder="例：這段感情未來發展？" oninput="updatePlayerSetup(${p.id},'topic',this.value)">${p.topic}</textarea>
+      </div>
+    </div>`;
+  });
+
+  html += `<button class="start-btn" onclick="startGame()">開始記錄 →</button></div>`;
+  document.getElementById('mainContent').innerHTML = html;
+}
+
+function initPlayers(n) {
+  const old = players;
+  players = Array.from({length: n}, (_,i) => {
+    const existing = old.find(p => p.id === i);
+    return existing || {
+      id: i, name:'', zodiac:'', topic:'', color: PLAYER_COLORS[i],
+      phases: {body:[], mind:[], spirit:[]},
+      nobleCarry: {body:0, mind:0, spirit:0},
+      phaseDone: {body:false, mind:false, spirit:false},
+      insight:'', action:''
+    };
+  });
+  renderSetup();
+}
+
+function updatePlayerSetup(id, field, val) {
+  const p = players.find(x => x.id === id);
+  if (p) p[field] = val;
+}
+
+function showFab() {
+  if (document.getElementById('mainFab')) return;
+  const btn = document.createElement('button');
+  btn.id = 'mainFab';
+  btn.innerHTML = '＋';
+  btn.setAttribute('style', [
+    'position:fixed',
+    'bottom:' + (62 + 14) + 'px',
+    'right:14px',
+    'width:52px',
+    'height:52px',
+    'border-radius:50%',
+    'background:#9a7040',
+    'color:#fff',
+    'border:none',
+    'font-size:28px',
+    'cursor:pointer',
+    'z-index:9999',
+    'display:flex',
+    'align-items:center',
+    'justify-content:center',
+    'box-shadow:0 4px 14px rgba(154,112,64,.5)',
+    'line-height:1',
+  ].join(';'));
+  btn.onclick = addRoll;
+  document.body.appendChild(btn);
+}
+
+function hideFab() {
+  const f = document.getElementById('mainFab');
+  if (f) f.remove();
+}
+
+function startGame() {
+  if (!players.length) return;
+  gameStarted = true;
+  currentPlayerId = players[0].id;
+  currentPhase = 'body';
+  renderPlayerTabs();
+  renderPhaseContent();
+  showFab();
+}
+
+// ── PLAYER TABS ──
+function updateDots() {
+  renderPlayerTabs();
+}
+
+function renderPlayerTabs() {
+  const bar = document.getElementById('playerTabsBar');
+  if (!bar) return;
+  bar.innerHTML = players.map(p => {
+    const hasRolls = PHASES.some(ph => p.phases[ph].length > 0);
+    const isActive = p.id === currentPlayerId;
+    const name = p.name || '玩家'+(p.id+1);
+    return `<button class="tab ${isActive?'active player-active':''}" onclick="switchPlayer(${p.id})" style="${isActive?'color:var(--gold);':''}">
+      <span class="tab-icon" style="font-size:15px;font-weight:600;color:${PLAYER_COLORS[p.id]}">${name.charAt(0)}</span>
+      <span class="tab-label">${name}</span>
+      ${hasRolls?`<div class="tab-dot show" style="background:${PLAYER_COLORS[p.id]}"></div>`:''}
+    </button>`;
+  }).join('');
+}
+
+function switchPlayer(id) {
+  currentPlayerId = id;
+  currentPhase = 'body';
+  renderPlayerTabs();
+  renderPhaseContent();
+  document.getElementById('scrollArea').scrollTop = 0;
+}
+
+// ── PHASE ──
+function setPhase(phase) {
+  currentPhase = phase;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  const tabEl = document.getElementById('tab-'+phase);
+  if (tabEl) tabEl.classList.add('active');
+  renderPhaseContent();
+  document.getElementById('scrollArea').scrollTop = 0;
+}
+
+// ── MAIN RENDER ──
+function renderPhaseContent() {
+  if (!gameStarted) { renderSetup(); return; }
+  const player = getPlayer();
+  if (!player) return;
+
+  let html = '';
+
+  // phase chips — 身心靈 + 藍圖
+  html += `<div class="phase-strip">
+    ${PHASES.map(ph => {
+      const s = calcPassStatus(player, ph);
+      const active = ph === currentPhase ? 'active '+ph : '';
+      const done = player.phaseDone[ph] ? 'done' : '';
+      const cnt = player.phases[ph].filter(r => INFO_CELLS.includes(r.cellType)).length;
+      return `<div class="phase-chip ${active} ${done}" onclick="setPhase('${ph}')">
+        <div class="pc-name">${PHASE_NAMES[ph]}</div>
+        <div class="pc-count">${cnt} 張訊息卡</div>
+      </div>`;
+    }).join('')}
+    <div class="phase-chip ${currentPhase==='blueprint'?'active blueprint':''}" onclick="setPhase('blueprint')">
+      <div class="pc-name">✦ 藍圖</div>
+      <div class="pc-count">答案藍圖</div>
+    </div>
+  </div>`;
+
+  // 藍圖模式 — FAB 隱藏，只渲染藍圖
+  if (currentPhase === 'blueprint') {
+    hideFab();
+    const hs = document.getElementById('headerStatus');
+    if (hs) hs.innerHTML = '';
+    html += renderBlueprint(player);
+    document.getElementById('mainContent').innerHTML = html;
+    return;
+  }
+
+  showFab();
+
+  const rolls = player.phases[currentPhase];
+  const status = calcPassStatus(player, currentPhase);
+  const carryIn = player.nobleCarry[currentPhase] || 0;
+  if (carryIn > 0) {
+    html += `<div class="noble-carry">⭐ 從上一關帶來 ${carryIn} 張貴人卡，可抵訊息卡使用</div>`;
+  }
+
+  // 更新 header 過關狀態
+  const headerStatus = document.getElementById('headerStatus');
+  if (headerStatus) {
+    if (status.canPass) {
+      headerStatus.innerHTML = '<div class="status-bar pass">✅ 已達過關條件！可繼續或進入下一關（最多9張）</div>';
+    } else if (status.atLimit) {
+      headerStatus.innerHTML = '<div class="status-bar limit">🔴 已達9張上限，請確認是否過關</div>';
+    } else {
+      const a = `方式①：${status.infoCount}/4 張${status.has3Types?'（3種✓）':'（需含塔羅、議題、指引）'}`;
+      const b = `方式②：${status.infoCount}/7 張`;
+      const noble = status.hasNoble ? '' : '　缺貴人卡×1';
+      headerStatus.innerHTML = '<div class="status-bar warn">🎯 ' + a + '　' + b + noble + '</div>';
+    }
+  }
+
+  // rolls
+  if (rolls.length === 0) {
+    html += '<div class="empty-state">還沒有紀錄<br>點 ＋ 記錄這一步</div>';
+  } else {
+    html += `<div class="round-log">${rolls.map((r, idx) => renderRoll(r, idx+1, rolls)).join('')}</div>`;
+  }
+
+  document.getElementById('mainContent').innerHTML = html;
+  updateDots();
+
+
+}
+
+function renderBlueprint(player) {
+  // 每個關卡，玩家選出塔羅、議題、指引各1張
+  // 初始化 blueprint 資料結構
+  if (!player.blueprint) player.blueprint = {
+    body:  {tarotId:null, tarotOrientation:'', issueId:null, guideId:null},
+    mind:  {tarotId:null, tarotOrientation:'', issueId:null, guideId:null},
+    spirit:{tarotId:null, tarotOrientation:'', issueId:null, guideId:null},
+  };
+
+  const bp = player.blueprint;
+
+  let html = '';
+
+  PHASES.forEach(ph => {
+    const phName = PHASE_NAMES[ph];
+    const rolls = player.phases[ph];
+    // 收集可選的牌
+    const tarotRolls = rolls.filter(r => (r.cellType==='tarot'||r.cellType==='tarot-minor'||r.cellType==='golden'||r.cellType==='destiny') && r.cardName);
+    const issueRolls = rolls.filter(r => (r.cellType==='issue'||r.cellType==='golden') && r.cardName);
+    const guideRolls = rolls.filter(r => (r.cellType==='guide'||r.cellType==='golden') && r.cardName);
+    // 也檢查 extras 裡的貴人得牌
+    const extraCards = rolls.flatMap(r => (r.extras||[]).filter(e => e.cardName).map(e => ({cellType: e.nobleDice||e.destinyRole, cardName: e.cardName})));
+
+    const tarotOpts = [...tarotRolls, ...extraCards.filter(e => e.cellType==='tarot'||e.cellType==='tarot-minor')];
+    const issueOpts = [...issueRolls, ...extraCards.filter(e => e.cellType==='issue')];
+    const guideOpts = [...guideRolls, ...extraCards.filter(e => e.cellType==='guide')];
+
+    const sel = (field, opts, label) => {
+      const cur = bp[ph][field];
+      if (opts.length === 0) return `<div class="bp-empty">${label}：本關尚無此類牌卡</div>`;
+      return `<div class="field-group"><div class="field-label">${label}</div>
+        <select onchange="setBlueprintCard('${ph}','${field}',this.value)">
+          <option value="">— 選擇 —</option>
+          ${opts.map(r => `<option value="${r.cardName}" ${cur===r.cardName?'selected':''}>${r.cardName}</option>`).join('')}
+        </select></div>`;
+    };
+
+    const isTarotSelected = bp[ph].tarotId;
+    const isTarotMinor = tarotRolls.find(r => r.cardName===bp[ph].tarotId && (r.cellType==='tarot'||r.cellType==='tarot-minor'));
+
+    const imgUrl = bp[ph].tarotId ? getCardImg(bp[ph].tarotId, bp[ph].tarotOrientation) : null;
+    const issueImg = bp[ph].issueId ? getCardImg(bp[ph].issueId, '') : null;
+    const guideImg = bp[ph].guideId ? getCardImg(bp[ph].guideId, '') : null;
+
+    html += `<div class="bp-phase-block">
+      <div class="bp-phase-title ${ph}">${phName} 關</div>
+
+      <div class="bp-card-row">
+        <div class="bp-card-slot">
+          <div class="bp-slot-label">塔羅牌</div>
+          ${sel('tarotId', tarotOpts, '選擇塔羅牌')}
+          ${isTarotSelected ? `<div class="field-group"><div class="field-label">正 / 逆位（可調整）</div>
+            <div class="orient-btns">
+              <button class="orient-btn ${bp[ph].tarotOrientation==='正位'?'active':''}" onclick="setBlueprintCard('${ph}','tarotOrientation','${bp[ph].tarotOrientation==='正位'?'':'正位'}')">正位</button>
+              <button class="orient-btn ${bp[ph].tarotOrientation==='逆位'?'active':''}" onclick="setBlueprintCard('${ph}','tarotOrientation','${bp[ph].tarotOrientation==='逆位'?'':'逆位'}')">逆位</button>
+            </div></div>` : ''}
+          ${imgUrl ? `<img class="bp-card-img" src="${imgUrl}" alt="${bp[ph].tarotId}">` : ''}
+        </div>
+        <div class="bp-card-slot">
+          <div class="bp-slot-label">議題卡</div>
+          ${sel('issueId', issueOpts, '選擇議題卡')}
+          ${issueImg ? `<img class="bp-card-img" src="${issueImg}" alt="${bp[ph].issueId}">` : ''}
+        </div>
+        <div class="bp-card-slot">
+          <div class="bp-slot-label">指引卡</div>
+          ${sel('guideId', guideOpts, '選擇指引卡')}
+          ${guideImg ? `<img class="bp-card-img" src="${guideImg}" alt="${bp[ph].guideId}">` : ''}
+        </div>
+      </div>
+    </div>`;
+  });
+
+  html += `<div class="field-group" style="margin-top:4px">
+    <div class="field-label">核心啟發</div>
+    <textarea rows="3" placeholder="這場遊戲給你的啟發…" oninput="getPlayer().insight=this.value">${player.insight||''}</textarea>
+  </div>
+  <div class="field-group">
+    <div class="field-label">你打算如何實踐？</div>
+    <textarea rows="3" placeholder="具體行動或心態調整…" oninput="getPlayer().action=this.value">${player.action||''}</textarea>
+  </div>`;
+
+  return html;
+}
+
+function setBlueprintCard(ph, field, val) {
+  const player = getPlayer(); if (!player) return;
+  if (!player.blueprint) player.blueprint = {body:{},mind:{},spirit:{}};
+  if (!player.blueprint[ph]) player.blueprint[ph] = {};
+  player.blueprint[ph][field] = val;
+  renderPhaseContent();
+}
+
+function renderRoll(r, idx, phaseRounds) {
+  const ct = CELL_TYPES.find(c => c.key === r.cellType);
+  const badgeCls = r.cellType ? CELL_CLASS[r.cellType] || 'none' : 'none';
+  const badgeLabel = ct ? ct.label : '—';
+  const isInfoCard = INFO_CELLS.includes(r.cellType);
+
+  // photo
+  // photo replaced by card image lookup
+  const photoHTML = '';
+  const aiHTML = '';
+
+  const showOrientation = r.cellType === 'tarot' || r.cellType === 'tarot-minor';
+
+  // ── helpers ──
+  function cardSelectHTML(type, selectedVal, idPrefix) {
+    if (type === 'guide') {
+      return `<select onchange="updateRoll(${r.id},'${idPrefix}',this.value)">
+        <option value="">— 選擇 —</option>
+        ${GUIDE_GROUPS.map(g=>`<optgroup label="${g.icon}">${g.cards.map(c=>`<option value="${c}" ${selectedVal===c?'selected':''}>${c}</option>`).join('')}</optgroup>`).join('')}
+      </select>`;
+    }
+    if (type === 'tarot-minor') {
+      return `<select onchange="updateRoll(${r.id},'${idPrefix}',this.value)">
+        <option value="">— 選擇 —</option>
+        ${TAROT_MINOR_GROUPS.map(g=>`<optgroup label="${g.icon} ${g.suit}">${g.cards.map(c=>`<option value="${c}" ${selectedVal===c?'selected':''}>${c}</option>`).join('')}</optgroup>`).join('')}
+      </select>`;
+    }
+    const opts = CARD_OPTIONS[type] || [];
+    return `<select onchange="updateRoll(${r.id},'${idPrefix}',this.value)">
+      <option value="">— 選擇 —</option>
+      ${opts.map(o=>`<option value="${o}" ${selectedVal===o?'selected':''}>${o}</option>`).join('')}
+    </select>`;
+  }
+
+  // ── 主格子內容 ──
+  const cardField = (() => {
+    if (!r.cellType) return '';
+
+    if (r.cellType === 'noble') {
+      return `<div class="rule-note noble"><div class="rule-note-title">⭐ 貴人格子</div>
+        <div class="rule-note-body">領取貴人卡，擲貴人骰，依指示抽取牌卡給對方</div></div>
+        <div class="field-group"><div class="field-label">幫助的玩家</div>
+          <select onchange="updateRoll(${r.id},'noblePerson',this.value)">
+            <option value="">— 選擇玩家 —</option>
+            ${players.filter(p=>p.id!==currentPlayerId).map(p=>`<option value="${p.name||'玩家'+(p.id+1)}" ${r.noblePerson===(p.name||'玩家'+(p.id+1))?'selected':''}>${p.name||'玩家'+(p.id+1)}</option>`).join('')}
+          </select>
+        </div>`;
+    }
+
+    if (r.cellType === 'release') {
+      return `<div class="rule-note release"><div class="rule-note-title">🍃 放下格子</div>
+        <div class="rule-note-body">領取一張放下卡，本階段結束前需放下等同張數的訊息牌</div></div>`;
+    }
+
+    if (r.cellType === 'destiny') {
+      const DESTINY_TYPES = [
+        {key:'issue',      icon:'🔵', label:'議題'},
+        {key:'tarot-minor',icon:'🟠', label:'真相'},
+        {key:'tarot',      icon:'⭐', label:'探索'},
+        {key:'guide',      icon:'🟢', label:'指引'},
+      ];
+      const dt = r.destinyCardType || '';
+      const destinyCardSel = (() => {
+        if (!dt) return '';
+        if (dt === 'guide') {
+          const gg = r.destinyGuideGroup || '';
+          return `<div class="field-group"><div class="field-label">元素</div>
+            <div class="suit-btns">
+              ${GUIDE_GROUPS.map(g=>`<button class="suit-btn ${gg===g.name?'active':''}" onclick="updateRoll(${r.id},'destinyGuideGroup','${gg===g.name?'':g.name}');renderPhaseContent()">
+                <span class="suit-icon">${g.icon}</span><span class="suit-name">${g.name.split('').filter(c=>!['🌬','️','💧','🔥','🌿'].includes(c)).join('').trim()}</span>
+              </button>`).join('')}
+            </div></div>
+            ${gg ? `<div class="field-group"><div class="field-label">牌卡名稱</div>
+              <select onchange="updateRoll(${r.id},'cardName',this.value)">
+                <option value="">— 選擇 —</option>
+                ${(GUIDE_GROUPS.find(g=>g.name===gg)?.cards||[]).map(c=>`<option value="${c}" ${r.cardName===c?'selected':''}>${c}</option>`).join('')}
+              </select></div>` : ''}`;
+        }
+        if (dt === 'tarot-minor') {
+          const tg = r.tarotGroup || '';
+          return `<div class="field-group"><div class="field-label">牌組</div>
+            <div class="suit-btns">
+              ${TAROT_MINOR_GROUPS.map(g=>`<button class="suit-btn ${tg===g.name?'active':''}" onclick="updateRoll(${r.id},'tarotGroup','${tg===g.name?'':g.name}');renderPhaseContent()">
+                <span class="suit-icon">${g.icon}</span><span class="suit-name">${g.suit}</span>
+              </button>`).join('')}
+            </div></div>
+            ${tg ? `<div class="field-group"><div class="field-label">牌卡名稱</div>
+              <select onchange="updateRoll(${r.id},'cardName',this.value)">
+                <option value="">— 選擇 —</option>
+                ${(TAROT_MINOR_GROUPS.find(g=>g.name===tg)?.cards||[]).map(c=>`<option value="${c}" ${r.cardName===c?'selected':''}>${c}</option>`).join('')}
+              </select></div>` : ''}`;
+        }
+        const opts = CARD_OPTIONS[dt] || [];
+        return `<div class="field-group"><div class="field-label">牌卡名稱</div>
+          <select onchange="updateRoll(${r.id},'cardName',this.value)">
+            <option value="">— 選擇 —</option>
+            ${opts.map(o=>`<option value="${o}" ${r.cardName===o?'selected':''}>${o}</option>`).join('')}
+          </select></div>`;
+      })();
+      return `<div class="rule-note destiny"><div class="rule-note-title">🎡 命運之輪</div>
+        <div class="rule-note-body">憑直覺抽一張訊息卡 → 所有人輪流擲骰 → 最大者得牌 → 可選擇打開或不打開</div></div>
+
+        <div class="field-group"><div class="field-label">① 抽出的牌種</div>
+          <div class="suit-btns" style="flex-wrap:wrap;">
+            ${DESTINY_TYPES.map(t=>`<button class="suit-btn ${dt===t.key?'active':''}" onclick="updateRoll(${r.id},'destinyCardType','${dt===t.key?'':t.key}');renderPhaseContent()" style="width:60px;">
+              <span class="suit-icon">${t.icon}</span><span class="suit-name">${t.label}</span>
+            </button>`).join('')}
+          </div></div>
+        ${destinyCardSel}
+
+        <div class="field-group"><div class="field-label">② 得牌玩家（骰子最大者）</div>
+          <select onchange="updateRoll(${r.id},'destinyWinner',this.value)">
+            <option value="">— 選擇玩家 —</option>
+            ${players.map(p=>`<option value="${p.name||'玩家'+(p.id+1)}" ${r.destinyWinner===(p.name||'玩家'+(p.id+1))?'selected':''}>${p.name||'玩家'+(p.id+1)}</option>`).join('')}
+          </select>
+        </div>`;
+    }
+
+    if (r.cellType === 'issue') {
+      return `<div class="field-group"><div class="field-label">牌卡名稱</div>
+        <select onchange="updateRoll(${r.id},'cardName',this.value)">
+          <option value="">— 選擇 —</option>
+          ${CARD_OPTIONS['issue'].map(o=>`<option value="${o}" ${r.cardName===o?'selected':''}>${o}</option>`).join('')}
+        </select></div>`;
+    }
+
+    if (r.cellType === 'tarot' || r.cellType === 'tarot-minor') {
+      const isTarotMinor = r.cellType === 'tarot-minor';
+      const groupSelect = isTarotMinor ? `<div class="field-group"><div class="field-label">牌組</div>
+        <div class="suit-btns">
+          ${TAROT_MINOR_GROUPS.map(g=>`<button class="suit-btn ${r.tarotGroup===g.name?'active':''}" onclick="updateRoll(${r.id},'tarotGroup','${r.tarotGroup===g.name?'':g.name}');renderPhaseContent()">
+            <span class="suit-icon">${g.icon}</span><span class="suit-name">${g.suit}</span>
+          </button>`).join('')}
+        </div></div>` : '';
+      const groupCards = isTarotMinor
+        ? (r.tarotGroup ? TAROT_MINOR_GROUPS.find(g=>g.name===r.tarotGroup)?.cards||[] : [])
+        : CARD_OPTIONS['tarot'];
+      const cardSelect = (!isTarotMinor||r.tarotGroup) ? `<div class="field-group"><div class="field-label">牌卡名稱</div>
+        <select onchange="updateRoll(${r.id},'cardName',this.value)">
+          <option value="">— 選擇 —</option>
+          ${groupCards.map(o=>`<option value="${o}" ${r.cardName===o?'selected':''}>${o}</option>`).join('')}
+        </select></div>` : '';
+      return `${groupSelect}${cardSelect}
+        <div class="field-group"><div class="field-label">正 / 逆位</div>
+          <div class="orient-btns">
+            <button class="orient-btn ${r.orientation==='正位'?'active':''}" data-val="正位" onclick="selectOrient(${r.id},'正位')">正位</button>
+            <button class="orient-btn ${r.orientation==='逆位'?'active':''}" data-val="逆位" onclick="selectOrient(${r.id},'逆位')">逆位</button>
+          </div></div>`;
+    }
+
+    if (r.cellType === 'guide') {
+      const gg = r.guideGroup || '';
+      const groupCards = gg ? GUIDE_GROUPS.find(g=>g.name===gg)?.cards || [] : [];
+      return `<div class="field-group"><div class="field-label">元素</div>
+        <div class="suit-btns">
+          ${GUIDE_GROUPS.map(g=>`<button class="suit-btn ${gg===g.name?'active':''}" onclick="updateRoll(${r.id},'guideGroup','${gg===g.name?'':g.name}');renderPhaseContent()">
+            <span class="suit-icon">${g.icon}</span><span class="suit-name">${g.suit||g.name.replace(/[🌬️💧🔥🌿\s]/g,'').slice(0,2)}</span>
+          </button>`).join('')}
+        </div></div>
+        ${gg ? `<div class="field-group"><div class="field-label">牌卡名稱</div>
+          <select onchange="updateRoll(${r.id},'cardName',this.value)">
+            <option value="">— 選擇 —</option>
+            ${groupCards.map(c=>`<option value="${c}" ${r.cardName===c?'selected':''}>${c}</option>`).join('')}
+          </select></div>` : ''}`;
+    }
+    return '';
+  })();
+
+  // ── 附加事件 ──
+  const extras = r.extras || [];
+  const extraHTML = `
+    <div class="extra-section">
+      <div class="extra-title">附加事件</div>
+      ${extras.map((ex, ei) => renderExtra(r, ex, ei)).join('')}
+      <div class="extra-add-row">
+        <button class="extra-add-btn" onclick="addExtra(${r.id},'destiny')">＋ 命運之輪</button>
+        <button class="extra-add-btn" onclick="addExtra(${r.id},'noble')">＋ 貴人</button>
+        <button class="extra-add-btn" onclick="addExtra(${r.id},'release')">＋ 放下牌</button>
+        <button class="extra-add-btn" onclick="addExtra(${r.id},'golden')" style="color:#92680a;border-color:#92680a;">＋ 黃金格</button>
+      </div>
+    </div>`;
+
+  const isCollapsed = idx < phaseRounds.length && r.collapsed;
+
+  return `<div class="roll-entry ${isCollapsed?'collapsed':''}" id="roll-${r.id}">
+    <div class="roll-header" onclick="toggleRoll(${r.id})">
+      <div class="roll-meta">
+        <span class="roll-num">第 ${idx} 輪</span>
+        <span class="cell-badge ${badgeCls}">${badgeLabel}</span>
+        ${r.cardName ? `<span style="font-size:12px;color:var(--text-dim)">${r.cardName}${r.orientation?' '+r.orientation:''}</span>` : ''}
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span class="collapse-arrow">${isCollapsed?'›':'⌄'}</span>
+        <button class="del-btn" onclick="event.stopPropagation();deleteRoll(${r.id})">×</button>
+      </div>
+    </div>
+    <div class="roll-body" ${isCollapsed?'style="display:none"':''}>
+      <div class="field-group">
+        <div class="field-label">停在哪個格子</div>
+        <div class="ct-btns">
+          ${CELL_TYPES.map(c => {
+            const active = r.cellType === c.key ? 'active '+(CELL_CLASS[c.key]||c.key) : '';
+            return `<button class="ct-btn ${active}" onclick="selectCellType(${r.id},'${c.key}')">${c.label}</button>`;
+          }).join('')}
+        </div>
+      </div>
+      ${cardField}
+      ${(()=>{ const img=getCardImg(r.cardName,r.orientation); return img?`<img class="card-img" src="${img}" alt="${r.cardName}">`:''})()}
+      <div class="field-group">
+        <div class="field-label">當下感受 / 備註</div>
+        <textarea placeholder="這一步的感受或觀察…" oninput="updateRoll(${r.id},'note',this.value)">${r.note}</textarea>
+      </div>
+      ${extraHTML}
+    </div>
+  </div>`;
+}
+
+// ── ROLL ACTIONS ──
+function toggleRoll(id) {
+  const player = getPlayer(); if (!player) return;
+  for (const ph of PHASES) {
+    const r = player.phases[ph].find(r => r.id === id);
+    if (r) { r.collapsed = !r.collapsed; break; }
+  }
+  renderPhaseContent();
+}
+
+function addRoll() {
+  const player = getPlayer();
+  if (!player) return;
+  // collapse all previous rolls in this phase
+  player.phases[currentPhase].forEach(r => { r.collapsed = true; });
+  player.phases[currentPhase].push({
+    id: nextId++, dice: null, cellType:'', cardName:'', orientation:'', tarotGroup:'', note:'', extras:[], collapsed: false
+  });
+  renderPhaseContent();
+  setTimeout(() => { const a = document.getElementById('scrollArea'); a.scrollTop = a.scrollHeight; }, 60);
+}
+
+function deleteRoll(id) {
+  const player = getPlayer();
+  if (!player) return;
+  player.phases[currentPhase] = player.phases[currentPhase].filter(r => r.id !== id);
+  renderPhaseContent();
+}
+
+function updateRoll(id, field, val) {
+  const player = getPlayer();
+  if (!player) return;
+  for (const ph of PHASES) {
+    const r = player.phases[ph].find(r => r.id === id);
+    if (r) { r[field] = val; break; }
+  }
+  updateDots();
+}
+
+function selectCellType(id, key) {
+  const player = getPlayer();
+  if (!player) return;
+  for (const ph of PHASES) {
+    const r = player.phases[ph].find(r => r.id === id);
+    if (r) {
+      const prev = r.cellType;
+      r.cellType = (prev === key) ? '' : key;
+      if (prev !== r.cellType) { r.cardName = ''; r.orientation = ''; }
+      break;
+    }
+  }
+  renderPhaseContent();
+}
+
+function selectOrient(id, val) {
+  const player = getPlayer();
+  if (!player) return;
+  for (const ph of PHASES) {
+    const r = player.phases[ph].find(r => r.id === id);
+    if (r) { r.orientation = (r.orientation === val) ? '' : val; break; }
+  }
+  const btns = document.querySelectorAll(`#roll-${id} .orient-btn`);
+  btns.forEach(b => b.classList.toggle('active', b.dataset.val === (() => {
+    for (const ph of PHASES) { const r = getPlayer()?.phases[ph].find(r => r.id === id); if (r) return r.orientation; } return '';
+  })()));
+}
+
+function dismissAi(id) {
+  const player = getPlayer();
+  if (!player) return;
+  for (const ph of PHASES) {
+    const r = player.phases[ph].find(r => r.id === id);
+    if (r) { r.aiResult = null; break; }
+  }
+  renderPhaseContent();
+}
+
+// ── PHOTO ──
+
+function addExtra(rollId, type) {
+  const player = getPlayer(); if (!player) return;
+  for (const ph of PHASES) {
+    const r = player.phases[ph].find(r=>r.id===rollId);
+    if (r) { if (!r.extras) r.extras=[]; r.extras.push({id:nextId++,type,cardName:'',orientation:'',destinyWinner:'',noblePerson:'',nobleRole:'',nobleDice:'',releasedCard:''}); break; }
+  }
+  renderPhaseContent();
+}
+
+function removeExtra(rollId, extraId) {
+  const player = getPlayer(); if (!player) return;
+  for (const ph of PHASES) {
+    const r = player.phases[ph].find(r=>r.id===rollId);
+    if (r) { r.extras = (r.extras||[]).filter(e=>e.id!==extraId); break; }
+  }
+  renderPhaseContent();
+}
+
+function updateExtra(rollId, extraId, field, val) {
+  const player = getPlayer(); if (!player) return;
+  for (const ph of PHASES) {
+    const r = player.phases[ph].find(r=>r.id===rollId);
+    if (r) { const ex = (r.extras||[]).find(e=>e.id===extraId); if (ex) ex[field]=val; break; }
+  }
+  updateDots();
+}
+
+function updateExtraAndRefresh(rollId, extraId, field, val) {
+  updateExtra(rollId, extraId, field, val);
+  renderPhaseContent();
+}
+
+function renderExtra(r, ex, ei) {
+  const playerOpts = players.map(p=>`<option value="${p.name||'玩家'+(p.id+1)}" ${ex.noblePerson===(p.name||'玩家'+(p.id+1))?'selected':''}>${p.name||'玩家'+(p.id+1)}</option>`).join('');
+  const othersOpts = players.filter(p=>p.id!==currentPlayerId).map(p=>`<option value="${p.name||'玩家'+(p.id+1)}" ${ex.noblePerson===(p.name||'玩家'+(p.id+1))?'selected':''}>${p.name||'玩家'+(p.id+1)}</option>`).join('');
+  const allCardSel = (field) => `<select onchange="updateExtra(${r.id},${ex.id},'${field}',this.value)">
+    <option value="">— 選擇 —</option>
+    <optgroup label="探索">${CARD_OPTIONS['tarot'].map(o=>`<option value="${o}" ${ex[field]===o?'selected':''}>${o}</option>`).join('')}</optgroup>
+    <optgroup label="真相">${TAROT_MINOR_GROUPS.map(g=>`<optgroup label="${g.icon} ${g.suit}">${g.cards.map(c=>`<option value="${c}" ${ex[field]===c?'selected':''}>${c}</option>`).join('')}</optgroup>`).join('')}</optgroup>
+    <optgroup label="議題">${CARD_OPTIONS['issue'].map(o=>`<option value="${o}" ${ex[field]===o?'selected':''}>${o}</option>`).join('')}</optgroup>
+    <optgroup label="指引">${GUIDE_GROUPS.map(g=>`<optgroup label="${g.icon}">${g.cards.map(c=>`<option value="${c}" ${ex[field]===c?'selected':''}>${c}</option>`).join('')}</optgroup>`).join('')}</optgroup>
+  </select>`;
+
+  let body = '';
+  if (ex.type === 'destiny') {
+    const DESTINY_TYPES = [
+      {key:'issue',label:'議題',icon:'🔵'},
+      {key:'tarot-minor',label:'真相',icon:'🟠'},
+      {key:'tarot',label:'探索',icon:'⭐'},
+      {key:'guide',label:'指引',icon:'🟢'},
+    ];
+    const dt = ex.destinyCardType || '';
+    const cardOpts = (() => {
+      if (!dt) return '';
+      if (dt === 'guide') {
+        return `<div class="field-group"><div class="field-label">牌卡名稱</div><select onchange="updateExtra(${r.id},${ex.id},'cardName',this.value)">
+          <option value="">— 選擇 —</option>
+          ${GUIDE_GROUPS.map(g=>`<optgroup label="${g.icon}">${g.cards.map(c=>`<option value="${c}" ${ex.cardName===c?'selected':''}>${c}</option>`).join('')}</optgroup>`).join('')}
+        </select></div>`;
+      }
+      if (dt === 'tarot-minor') {
+        return `<div class="field-group"><div class="field-label">牌卡名稱</div><select onchange="updateExtra(${r.id},${ex.id},'cardName',this.value)">
+          <option value="">— 選擇 —</option>
+          ${TAROT_MINOR_GROUPS.map(g=>`<optgroup label="${g.icon} ${g.suit}">${g.cards.map(c=>`<option value="${c}" ${ex.cardName===c?'selected':''}>${c}</option>`).join('')}</optgroup>`).join('')}
+        </select></div>`;
+      }
+      const opts = CARD_OPTIONS[dt] || [];
+      return `<div class="field-group"><div class="field-label">牌卡名稱</div><select onchange="updateExtra(${r.id},${ex.id},'cardName',this.value)">
+        <option value="">— 選擇 —</option>
+        ${opts.map(o=>`<option value="${o}" ${ex.cardName===o?'selected':''}>${o}</option>`).join('')}
+      </select></div>`;
+    })();
+    body = `<div class="field-group"><div class="field-label">① 牌種</div>
+      <div class="suit-btns" style="flex-wrap:wrap;">
+        ${DESTINY_TYPES.map(t=>`<button class="suit-btn ${dt===t.key?'active':''}" onclick="updateExtraAndRefresh(${r.id},${ex.id},'destinyCardType','${dt===t.key?'':t.key}')" style="width:60px;">
+          <span class="suit-icon">${t.icon}</span><span class="suit-name">${t.label}</span>
+        </button>`).join('')}
+      </div></div>
+      ${cardOpts}
+      <div class="field-group"><div class="field-label">② 得牌玩家</div>
+        <select onchange="updateExtra(${r.id},${ex.id},'destinyWinner',this.value)">
+          <option value="">— 選擇玩家 —</option>
+          ${playerOpts}
+        </select>
+      </div>`;
+  } else if (ex.type === 'noble') {
+    body = '';
+    if (true) { ex.nobleRole = 'receiver'; {
+      body += `<div class="field-group"><div class="field-label">貴人是誰</div>
+        <select onchange="updateExtra(${r.id},${ex.id},'noblePerson',this.value)"><option value="">— 選擇 —</option>${othersOpts}</select></div>
+      <div class="field-group"><div class="field-label">貴人骰骰到</div>
+        <select onchange="updateExtraAndRefresh(${r.id},${ex.id},'nobleDice',this.value)">
+          <option value="">— 選擇 —</option>
+          <option value="release" ${ex.nobleDice==='release'?'selected':''}>放下</option>
+          <option value="destiny" ${ex.nobleDice==='destiny'?'selected':''}>命運之輪</option>
+          <option value="issue"   ${ex.nobleDice==='issue'?'selected':''}>議題</option>
+          <option value="tarot-minor" ${ex.nobleDice==='tarot-minor'?'selected':''}>真相</option>
+          <option value="tarot"   ${ex.nobleDice==='tarot'?'selected':''}>探索</option>
+          <option value="guide"   ${ex.nobleDice==='guide'?'selected':''}>指引</option>
+        </select></div>
+      ${ex.nobleDice && ex.nobleDice!=='release' && ex.nobleDice!=='destiny' ? `
+        <div class="field-group"><div class="field-label">得到的牌卡</div>
+          <select onchange="updateExtra(${r.id},${ex.id},'cardName',this.value)">
+            <option value="">— 選擇 —</option>
+            ${ex.nobleDice==='guide'
+              ? GUIDE_GROUPS.map(g=>`<optgroup label="${g.icon}">${g.cards.map(c=>`<option value="${c}" ${ex.cardName===c?'selected':''}>${c}</option>`).join('')}</optgroup>`).join('')
+              : (CARD_OPTIONS[ex.nobleDice]||[]).map(o=>`<option value="${o}" ${ex.cardName===o?'selected':''}>${o}</option>`).join('')}
+          </select></div>` : ''}`;
+    }}
+  } else if (ex.type === 'release') {
+    // 計算這個關卡目前收到的訊息牌
+    const player = getPlayer();
+    const phRolls = player ? player.phases[currentPhase] : [];
+    const infoRolls = phRolls.filter(roll => INFO_CELLS.includes(roll.cellType) && roll.cardName);
+    // 計算放下卡數量（主格子 + 附加事件）
+    const releaseCount = phRolls.reduce((acc, roll) => {
+      if (roll.cellType === 'release') acc++;
+      (roll.extras||[]).forEach(e => { if (e.type === 'release') acc++; });
+      return acc;
+    }, 0);
+    // 已放下的（其他附加事件中）
+    const alreadyReleased = phRolls.flatMap(roll =>
+      (roll.extras||[]).filter(e => e.type === 'release' && e.id !== ex.id && e.releasedCard).map(e => e.releasedCard)
+    );
+    const availableCards = infoRolls.filter(roll => !alreadyReleased.includes(roll.cardName));
+    body = `<div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">放下卡數：${releaseCount} 張，可放下 ${releaseCount} 張訊息牌</div>
+    <div class="field-group"><div class="field-label">選擇要放下的牌</div>
+      <select onchange="updateExtra(${r.id},${ex.id},'releasedCard',this.value)">
+        <option value="">— 選擇 —</option>
+        ${availableCards.map(roll=>`<option value="${roll.cardName}" ${ex.releasedCard===roll.cardName?'selected':''}>${roll.cardName}（${CELL_TYPES.find(c=>c.key===roll.cellType)?.label||''}）</option>`).join('')}
+        ${infoRolls.length===0?'<option disabled>— 尚無訊息牌可放下 —</option>':''}
+      </select>
+    </div>`;
+  } else if (ex.type === 'golden') {
+    body = `<div style="font-size:12px;color:#92680a;margin-bottom:4px">經過或停在此格，可任意抽取一張牌卡</div>
+    <div class="field-group"><div class="field-label">抽到的牌卡</div>
+      ${allCardSel('cardName')}
+    </div>`;
+  }
+
+  const labels = {destiny:'🎡 命運之輪', noble:'⭐ 貴人', release:'🍃 放下牌', golden:'✨ 黃金格'};
+  return `<div class="extra-card">
+    <div class="extra-card-hd">
+      <span class="extra-card-label">${labels[ex.type]||ex.type}</span>
+      <button class="del-btn" onclick="removeExtra(${r.id},${ex.id})">×</button>
+    </div>
+    <div class="extra-card-body">${body}</div>
+  </div>`;
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2500);
+}
+
+// ── DRAWER ──
+function openDrawer() {
+  renderDrawer();
+  document.getElementById('drawerOverlay').classList.add('open');
+  document.getElementById('drawer').classList.add('open');
+}
+function closeDrawer() {
+  document.getElementById('drawerOverlay').classList.remove('open');
+  document.getElementById('drawer').classList.remove('open');
+}
+
+function renderDrawer() {
+  if (!gameStarted) {
+    document.getElementById('drawerBody').innerHTML = '<div class="empty-state">遊戲尚未開始</div>';
+    return;
+  }
+  const player = getPlayer();
+  const playerSelect = `<div class="field-group"><div class="field-label">查看玩家</div>
+    <select onchange="switchPlayerDrawer(parseInt(this.value))">
+      ${players.map(p=>`<option value="${p.id}" ${p.id===currentPlayerId?'selected':''}>${p.name||'玩家'+(p.id+1)}</option>`).join('')}
+    </select></div>`;
+
+  const summaryHTML = PHASES.map(ph => {
+    const rolls = player.phases[ph];
+    const status = calcPassStatus(player, ph);
+    return `<div class="scard">
+      <div class="scard-hd ${ph}"><span>${PHASE_NAMES[ph]} 關</span>
+        <span style="font-size:12px;opacity:.7">${status.infoCount} 張訊息卡 ${status.canPass?'· ✅':''}${status.atLimit?'· 已達上限':''}</span>
+      </div>
+      <div class="scard-bd">
+        ${rolls.length===0?'<span style="font-size:12px;color:var(--text-dim);font-style:italic">尚未記錄</span>':rolls.map((r,i)=>{
+          const ct = CELL_TYPES.find(c=>c.key===r.cellType);
+          return `<div class="scard-row"><span class="scard-idx">#${i+1}</span><span>${ct?ct.label:'—'}${r.cardName?' · '+r.cardName:''}${r.orientation?' '+r.orientation:''}</span></div>`;
+        }).join('')}
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('drawerBody').innerHTML = `<div class="info-section">
+    ${playerSelect}
+    <div><div class="info-label" style="margin-bottom:8px">遊戲進度</div><div class="summary-grid">${summaryHTML}</div></div>
+    <div class="field-group">
+      <div class="info-label" style="margin-bottom:4px">遊戲結語</div>
+      <div class="field-label" style="margin-bottom:5px">核心啟發</div>
+      <textarea rows="3" placeholder="這場遊戲給你的啟發…" oninput="getPlayer().insight=this.value">${player.insight||''}</textarea>
+      <div class="field-label" style="margin-top:8px;margin-bottom:5px">你打算如何實踐？</div>
+      <textarea rows="3" placeholder="具體行動或心態調整…" oninput="getPlayer().action=this.value">${player.action||''}</textarea>
+    </div>
+    <div><div class="info-label" style="margin-bottom:8px">匯出</div>
+      <div class="export-btns">
+        <button class="export-btn primary" onclick="exportForAI()">複製 AI 分析文字</button>
+        <button class="export-btn" onclick="exportZip()">下載 ZIP（含照片）</button>
+      </div>
+    </div>
+  </div>`;
+
+  document.getElementById('drawerBody').querySelector('select') &&
+    document.getElementById('drawerBody').querySelectorAll('textarea').forEach((ta, i) => {
+      if (i===0) ta.addEventListener('input', e => { getPlayer().insight = e.target.value; });
+      if (i===1) ta.addEventListener('input', e => { getPlayer().action = e.target.value; });
+    });
+}
+
+function switchPlayerDrawer(id) {
+  currentPlayerId = id;
+  renderPlayerTabs();
+  renderPhaseContent();
+  renderDrawer();
+}
+
+// ── EXPORT ──
+function exportForAI() {
+  const player = getPlayer();
+  let text = `# 《答案》桌遊遊玩紀錄\n\n**玩家**：${player.name||'玩家'+(player.id+1)}\n**議題**：${player.topic||'（未填）'}\n\n---\n\n`;
+  PHASES.forEach(ph => {
+    const rolls = player.phases[ph];
+    const status = calcPassStatus(player, ph);
+    text += `## ${PHASE_NAMES[ph]} 關（${status.infoCount} 張訊息卡）\n\n`;
+    if (!rolls.length) { text += '（無記錄）\n\n'; return; }
+    rolls.forEach((r,i) => {
+      const ct = CELL_TYPES.find(c=>c.key===r.cellType);
+      text += `### 第 ${i+1} 輪\n`;
+      text += `- 格子：${ct?ct.label:'—'}\n`;
+      if (r.cardName) text += `- 牌卡：${r.cardName}${r.orientation?' ('+r.orientation+')':''}\n`;
+      if (r.note) text += `- 感受：${r.note}\n`;
+      text += '\n';
+    });
+  });
+  text += `---\n\n## 答案藍圖\n\n`;
+  if (player.blueprint) {
+    PHASES.forEach(ph => {
+      const bp = player.blueprint[ph] || {};
+      const parts = [];
+      if (bp.tarotId) parts.push(`塔羅 ${bp.tarotId}${bp.tarotOrientation?' '+bp.tarotOrientation:''}`);
+      if (bp.issueId) parts.push(`議題 ${bp.issueId}`);
+      if (bp.guideId) parts.push(`指引 ${bp.guideId}`);
+      text += `**${PHASE_NAMES[ph]}**：${parts.join('、')||'未完成'}\n`;
+    });
+  }
+  if (player.insight) text += `\n## 核心啟發\n\n${player.insight}\n`;
+  if (player.action) text += `\n## 實踐計畫\n\n${player.action}\n`;
+  text += `\n---\n\n請根據以上《答案》桌遊完整紀錄，依身（行動層）、心（情感層）、靈（靈魂層）三個維度整合解讀，對照議題「${player.topic||'（未填）'}」給出洞察與建議。`;
+  navigator.clipboard.writeText(text).then(()=>showToast('已複製！'));
+}
+
+async function exportZip() {
+  showToast('打包中…');
+  const zip = new JSZip();
+  const allData = { exportTime: new Date().toISOString(), players: players.map(p => {
+    const phases = {};
+    PHASES.forEach(ph => { phases[ph] = p.phases[ph].map(r => { const {photo,...rest} = r; return rest; }); });
+    return { id:p.id, name:p.name, zodiac:p.zodiac, topic:p.topic, phases, blueprint:p.blueprint, insight:p.insight, action:p.action };
+  })};
+  zip.file('紀錄.json', JSON.stringify(allData, null, 2));
+  const blob = await zip.generateAsync({type:'blob'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `答案紀錄_${new Date().toLocaleDateString('zh-TW').replace(/\//g,'-')}.zip`;
+  a.click();
+  showToast('已下載');
+}
+
+// ── INIT ──
+initPlayers(2);
+renderSetup();
+</script>
+<' + '/body>
+<' + '/html>
+</body>
+</html>
