@@ -2125,7 +2125,8 @@ function renderDrawer() {
     </div>
     <div><div class="info-label" style="margin-bottom:8px">匯出</div>
       <div class="export-btns">
-        <button class="export-btn primary" onclick="exportForAI()">複製 AI 分析文字</button>
+        <button class="export-btn primary" onclick="exportImage()">輸出成圖片</button>
+        <button class="export-btn" onclick="exportForAI()">複製 AI 分析文字</button>
         <button class="export-btn" onclick="exportZip()">下載 ZIP（含照片）</button>
       </div>
     </div>
@@ -2342,6 +2343,222 @@ setInterval(autoSave, 5000);
   window.addEventListener('resize', fit);
   window.addEventListener('orientationchange', () => setTimeout(fit, 200));
 })();
+
+// ── 輸出成圖片 ──
+function loadCardImage(url) {
+  return new Promise(resolve => {
+    if (!url) return resolve(null);
+    const img = new Image();
+    img.crossOrigin = 'anonymous'; // 需要圖床允許跨網域才能畫進圖片；失敗就改畫色塊
+    let done = false;
+    const finish = v => { if (!done) { done = true; resolve(v); } };
+    img.onload = () => finish(img);
+    img.onerror = () => finish(null);
+    setTimeout(() => finish(null), 8000);
+    img.src = url;
+  });
+}
+
+function wrapText(ctx, text, maxW) {
+  const lines = []; let line = '';
+  for (const ch of String(text || '')) {
+    if (ch === '\n') { lines.push(line); line = ''; continue; }
+    if (ctx.measureText(line + ch).width > maxW && line) { lines.push(line); line = ch; }
+    else line += ch;
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+function roundRectPath(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+}
+
+async function exportImage() {
+  const player = getPlayer(); if (!player) return;
+  showToast('圖片產生中…');
+  const FONT = '"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif';
+  const W = 1080, PAD = 64, CW = 150, CH = 225, GAP = 20;
+  const COLS = Math.floor((W - PAD * 2 + GAP) / (CW + GAP));
+  const PH_COLOR = { body:'#A03020', mind:'#2050A0', spirit:'#6040A8' };
+  const TYPE_BG = { tarot:['#e8d4b0','#c09050'], 'tarot-minor':['#e8d4b0','#c09050'], issue:['#b8cce8','#6090c8'], guide:['#c8b8e0','#9870c8'], golden:['#f0dea0','#c8a030'] };
+  const pName = player.name || '玩家' + (player.id + 1);
+  const pColor = player.color || PLAYER_COLORS[player.id] || '#7C5C38';
+
+  // 收集每關的手牌（依步驟順序）
+  const sections = PHASES.map(ph => {
+    const rolls = player.phases[ph];
+    const items = handItemsInOrder(rolls.filter(r => r.collapsed));
+    return { ph, items, status: calcPassStatus(player, ph) };
+  }).filter(s => s.items.length);
+
+  // 預先載入牌卡圖片
+  const imgMap = new Map();
+  await Promise.all(sections.flatMap(s => s.items.filter(it => it.kind === 'info').map(async it => {
+    const url = getCardImg(it.roll.cardName, it.roll.orientation);
+    imgMap.set(it.roll.id, await loadCardImage(url));
+  })));
+
+  const bp = player.blueprint || {};
+  const bpRows = PHASES.map(ph => {
+    const b = bp[ph] || {};
+    const parts = [];
+    if (b.tarotId) parts.push('塔羅 ' + b.tarotId + (b.tarotOrientation ? ' ' + b.tarotOrientation : ''));
+    if (b.issueId) parts.push('議題 ' + b.issueId);
+    if (b.guideId) parts.push('指引 ' + b.guideId);
+    return parts.length ? { ph, text: parts.join('　') } : null;
+  }).filter(Boolean);
+
+  // 畫兩次：第一次量高度，第二次真的畫
+  const render = (ctx, draw) => {
+    let y = PAD;
+    const text = (t, x, yy, size, color, weight = 400, align = 'left', style = '') => {
+      ctx.font = `${style} ${weight} ${size}px ${FONT}`; ctx.fillStyle = color; ctx.textAlign = align; ctx.textBaseline = 'top';
+      if (draw) ctx.fillText(t, x, yy);
+    };
+    text('SofaSogood ✦ 答案', PAD, y, 26, '#8C6E4E', 400); 
+    text(window._sessionDate || new Date().toISOString().slice(0,10), W - PAD, y + 2, 22, '#A8998A', 400, 'right');
+    y += 56;
+    text(pName, PAD, y, 52, pColor, 700); y += 72;
+    if (player.topic) {
+      ctx.font = `italic 400 30px ${FONT}`;
+      wrapText(ctx, '「' + player.topic + '」', W - PAD * 2).forEach(l => { text(l, PAD, y, 30, '#5C4A38', 400, 'left', 'italic'); y += 44; });
+    }
+    y += 20;
+    if (draw) { ctx.fillStyle = '#E6DCCB'; ctx.fillRect(PAD, y, W - PAD * 2, 2); }
+    y += 36;
+
+    sections.forEach(sec => {
+      const st = sec.status;
+      text(PHASE_NAMES[sec.ph] + ' 關', PAD, y, 36, PH_COLOR[sec.ph], 700);
+      const rc = releaseCounts(player.phases[sec.ph]);
+      const meta = `${st.infoCount} 張訊息卡${player.phaseDone[sec.ph] ? ' · 已過關 ✓' : ''}${rc.cards ? ` · 放下 ${rc.cards} 次` : ''}`;
+      text(meta, PAD + 110, y + 10, 24, '#8C7B6A', 400);
+      y += 64;
+      sec.items.forEach((it, i) => {
+        const col = i % COLS, row = Math.floor(i / COLS);
+        const x = PAD + col * (CW + GAP), cy = y + row * (CH + 88);
+        if (!draw) return;
+        ctx.save();
+        const faded = (it.kind === 'info' && it.gone) || (it.kind === 'release' && it.used);
+        if (faded) ctx.globalAlpha = 0.38;
+        roundRectPath(ctx, x, cy, CW, CH, 10); ctx.save(); ctx.clip();
+        if (it.kind === 'info') {
+          const img = imgMap.get(it.roll.id);
+          if (img) {
+            ctx.drawImage(img, x, cy, CW, CH);
+            if (it.gone) { ctx.globalCompositeOperation = 'saturation'; ctx.fillStyle = '#888'; ctx.fillRect(x, cy, CW, CH); }
+          } else {
+            const [c1, c2] = TYPE_BG[infoTypeOf(it.roll)] || TYPE_BG.tarot;
+            const g = ctx.createLinearGradient(x, cy, x + CW, cy + CH); g.addColorStop(0, it.gone ? '#ddd' : c1); g.addColorStop(1, it.gone ? '#aaa' : c2);
+            ctx.fillStyle = g; ctx.fillRect(x, cy, CW, CH);
+            ctx.font = `600 26px ${FONT}`; ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            wrapText(ctx, it.roll.cardName, CW - 24).slice(0, 4).forEach((l, k, arr) => ctx.fillText(l, x + CW / 2, cy + CH / 2 + (k - (arr.length - 1) / 2) * 34));
+          }
+        } else if (it.kind === 'noble') {
+          ctx.fillStyle = '#F0EDE6'; ctx.fillRect(x, cy, CW, CH);
+          ctx.beginPath(); ctx.arc(x + CW / 2, cy + CH / 2, 34, 0, Math.PI * 2); ctx.fillStyle = '#fff'; ctx.fill(); ctx.strokeStyle = '#D8CFC2'; ctx.lineWidth = 3; ctx.stroke();
+        } else {
+          ctx.fillStyle = it.used ? '#9A948C' : '#2C2218'; ctx.fillRect(x, cy, CW, CH);
+          ctx.beginPath(); ctx.arc(x + CW / 2, cy + CH / 2, 34, 0, Math.PI * 2); ctx.fillStyle = '#111'; ctx.fill();
+        }
+        ctx.restore();
+        roundRectPath(ctx, x, cy, CW, CH, 10); ctx.strokeStyle = '#E0D6C6'; ctx.lineWidth = 2; ctx.stroke();
+        // 牌名
+        const label = it.kind === 'info' ? it.roll.cardName + (it.roll.orientation ? ' ' + it.roll.orientation : '') + (it.gone ? '（已放下）' : '')
+          : it.kind === 'noble' ? '貴人' : (it.used ? '放下（已執行）' : '放下');
+        ctx.font = `400 22px ${FONT}`; ctx.fillStyle = '#5C4A38'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+        wrapText(ctx, label, CW + 10).slice(0, 2).forEach((l, k) => ctx.fillText(l, x + CW / 2, cy + CH + 10 + k * 28));
+        ctx.restore();
+      });
+      const rows = Math.ceil(sec.items.length / COLS);
+      y += rows * (CH + 88) + 24;
+    });
+
+    if (bpRows.length) {
+      text('✦ 答案藍圖', PAD, y, 36, '#8C6E4E', 700); y += 62;
+      bpRows.forEach(r => {
+        text(PHASE_NAMES[r.ph], PAD, y, 28, PH_COLOR[r.ph], 700);
+        ctx.font = `400 28px ${FONT}`;
+        wrapText(ctx, r.text, W - PAD * 2 - 60).forEach(l => { text(l, PAD + 60, y, 28, '#3C2E22', 400); y += 42; });
+        y += 8;
+      });
+      y += 24;
+    }
+    [['核心啟發', player.insight], ['如何實踐', player.action]].forEach(([k, v]) => {
+      if (!v) return;
+      text(k, PAD, y, 28, '#8C6E4E', 700); y += 46;
+      ctx.font = `400 28px ${FONT}`;
+      wrapText(ctx, v, W - PAD * 2).forEach(l => { text(l, PAD, y, 28, '#3C2E22', 400); y += 42; });
+      y += 24;
+    });
+    return y + PAD - 20;
+  };
+
+  const measure = document.createElement('canvas').getContext('2d');
+  const H = Math.ceil(render(measure, false));
+  const canvas = document.createElement('canvas');
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  const bg = ctx.createLinearGradient(0, 0, 0, H); bg.addColorStop(0, '#FDFCF9'); bg.addColorStop(1, '#F5EFE4');
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+  render(ctx, true);
+
+  let dataUrl;
+  try { dataUrl = canvas.toDataURL('image/png'); }
+  catch (e) { showToast('圖片產生失敗'); return; }
+  const fileName = `答案_${pName}_${window._sessionDate || ''}.png`.replace(/[\\/:*?"<>|\s]/g, '');
+  showImagePreview(dataUrl, fileName, canvas);
+}
+
+function showImagePreview(dataUrl, fileName, canvas) {
+  const old = document.getElementById('imgExport'); if (old) old.remove();
+  const m = document.createElement('div');
+  m.id = 'imgExport';
+  m.style.cssText = 'position:fixed;inset:0;z-index:10002;background:rgba(44,34,24,0.92);backdrop-filter:blur(6px);display:flex;flex-direction:column;align-items:center;padding:calc(env(safe-area-inset-top,0px) + 14px) 14px calc(env(safe-area-inset-bottom,0px) + 14px);gap:10px;';
+  const canShare = !!(navigator.canShare && window.File);
+  m.innerHTML = `
+    <div style="display:flex;width:100%;max-width:560px;align-items:center;justify-content:space-between;color:#E8DCC8;font-size:13px;">
+      <span>圖片預覽</span>
+      <button id="imgZoomBtn" style="padding:6px 12px;border:1px solid rgba(255,255,255,.3);border-radius:14px;background:transparent;color:#fff;font-size:12px;cursor:pointer;">放大檢視</button>
+    </div>
+    <div id="imgScroll" style="flex:1;min-height:0;width:100%;overflow:auto;-webkit-overflow-scrolling:touch;text-align:center;">
+      <img id="imgExportPic" src="${dataUrl}" alt="${fileName}" style="width:100%;max-width:560px;height:auto;border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,.35);">
+    </div>
+    <div style="font-size:12px;color:#E8DCC8;">點圖片可放大／縮小，長按可存到相簿</div>
+    <div style="display:flex;gap:8px;width:100%;max-width:560px;">
+      ${canShare ? `<button id="imgShareBtn" style="flex:1;padding:13px;border:none;border-radius:8px;background:linear-gradient(135deg,#A07850,#7C5C38);color:#fff;font-size:14px;cursor:pointer;">分享</button>` : ''}
+      <button onclick="document.getElementById('imgExport').remove()" style="flex:1;padding:13px;border:1px solid rgba(255,255,255,.3);border-radius:8px;background:transparent;color:#fff;font-size:14px;cursor:pointer;">關閉</button>
+    </div>`;
+  document.body.appendChild(m);
+
+  // 點圖片 / 放大鈕：在「符合寬度」和「原尺寸」之間切換
+  const pic = document.getElementById('imgExportPic');
+  const zoomBtn = document.getElementById('imgZoomBtn');
+  let zoomed = false;
+  const toggleZoom = () => {
+    zoomed = !zoomed;
+    pic.style.width = zoomed ? canvas.width + 'px' : '100%';
+    pic.style.maxWidth = zoomed ? 'none' : '560px';
+    zoomBtn.textContent = zoomed ? '縮小' : '放大檢視';
+  };
+  pic.onclick = toggleZoom;
+  zoomBtn.onclick = toggleZoom;
+
+  const shareBtn = document.getElementById('imgShareBtn');
+  if (shareBtn) shareBtn.onclick = () => {
+    canvas.toBlob(async blob => {
+      const file = new File([blob], fileName, { type: 'image/png' });
+      if (navigator.canShare({ files: [file] })) {
+        try { await navigator.share({ files: [file], title: fileName }); } catch (e) {}
+      } else {
+        showToast('這個瀏覽器不支援分享，請長按圖片儲存');
+      }
+    }, 'image/png');
+  };
+}
 </script>
 <' + '/body>
 <' + '/html>
