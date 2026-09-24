@@ -1126,12 +1126,13 @@ function renderRoll(r, idx, phaseRounds) {
 
       // 貴人：選給的牌種
       if (r.cellType === 'noble') {
-        const NOBLE_EXTRA = [{key:'release',label:'放下',bg:'var(--release-bg)',c:'var(--release-c)'},{key:'destiny',label:'命運之輪',bg:'var(--destiny-bg)',c:'var(--destiny-c)'}];
+        const NOBLE_EXTRA = [{key:'release',label:'放下卡',bg:'var(--release-bg)',c:'var(--release-c)'},{key:'destiny',label:'命運之輪',bg:'var(--destiny-bg)',c:'var(--destiny-c)'}];
         const cardType = r.nobleCardType || '';
         let cardSel = '';
         if (['issue','tarot','tarot-minor','guide'].includes(cardType)) {
           cardSel = renderInfoCardSel(r.id, cardType, r.cardName, r.orientation, cardType==='tarot-minor'?r.tarotGroup:r.guideGroup);
-        } else if (cardType === 'destiny') {
+        } else if (cardType === 'release') {
+          cardSel = `<div style="font-size:12px;color:var(--release-c);background:var(--release-bg);border-radius:var(--radius);padding:8px 12px;margin-top:2px;">🍃 對方得到一張放下卡，需在本階段結束前放下等同張數的訊息牌</div>`;
           // 命運之輪：再選牌種
           const dt = r.destinyCardType || '';
           const INFO_BTNS2 = [
@@ -1150,7 +1151,7 @@ function renderRoll(r, idx, phaseRounds) {
           cardSel = dtRow + dtCardSel;
         }
         return `<div class="rule-note noble"><div class="rule-note-title">⭐ 貴人</div></div>
-          <div class="field-group"><div class="field-label">給予的牌種</div>
+          <div class="field-group"><div class="field-label">得到的牌種</div>
             ${typeRow('nobleCardType', NOBLE_EXTRA)}
           </div>${cardSel}`;
       }
@@ -1297,7 +1298,7 @@ function renderRoll(r, idx, phaseRounds) {
       ${extras.map((ex, ei) => renderExtra(r, ex, ei)).join('')}
     </div>` : '';
 
-  const isCollapsed = idx < phaseRounds.length && r.collapsed;
+  const isCollapsed = r.collapsed === true;
 
   return `<div class="roll-entry ${isCollapsed?'collapsed':''} ${r.isExtra?'extra-roll':''}" id="roll-${r.id}">
     <div class="roll-header" onclick="toggleRoll(${r.id})">
