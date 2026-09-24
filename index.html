@@ -348,7 +348,7 @@ const ZODIAC_GROUPS = {
   water: ['巨蟹','天蠍','雙魚'],
 };
 const ZODIAC_LABEL = {fire:'火象',earth:'土象',air:'風象',water:'水象'};
-const ZODIAC_COLOR = {fire:'#A03020',earth:'#8C5E28',air:'#6040A8',water:'#2050A0'};
+const ZODIAC_COLOR = {fire:'#A03020',earth:'#3A7840',air:'#6040A8',water:'#2050A0'};
 
 const CELL_TYPES = [
   {key:'tarot',        label:'探索',   cls:'tarot'},
@@ -535,7 +535,7 @@ function renderSetup() {
     html += `<div class="player-setup-card">
       <div class="player-setup-hd">
         <div style="display:flex;align-items:center;gap:8px;">
-          <div class="player-color-dot" style="background:${p.color||PLAYER_COLORS[i]}"></div>
+          <div class="player-color-dot" style="background:${p.color||'#B8A898'}"></div>
           <span class="player-setup-label">玩家 ${i+1}</span>
         </div>
       </div>
@@ -543,8 +543,8 @@ function renderSetup() {
         <div class="field-label">顏色</div>
         <div style="display:flex;gap:10px;">
           ${[{c:'#6040A8',n:'紫'},{c:'#2050A0',n:'藍'},{c:'#A03020',n:'紅'},{c:'#3A7840',n:'綠'}].map(({c,n}) => {
-            const isSel = (p.color||PLAYER_COLORS[i]) === c;
-            const usedByOther = players.some(other => other.id !== p.id && (other.color||PLAYER_COLORS[other.id]) === c);
+            const isSel = p.color === c;
+            const usedByOther = players.some(other => other.id !== p.id && other.color === c);
             return `<button ${usedByOther&&!isSel ? 'disabled' : ''} onclick="setSetupColor(${p.id},'${c}')" style="width:36px;height:36px;border-radius:50%;background:${c};border:3px solid ${isSel?'#2C2218':'transparent'};cursor:${usedByOther&&!isSel?'not-allowed':'pointer'};opacity:${usedByOther&&!isSel?'0.25':'1'};transition:all .15s;" title="${usedByOther&&!isSel?'已被其他玩家使用':n}"></button>`;
           }).join('')}
         </div>
@@ -581,7 +581,7 @@ function initPlayers(n) {
   players = Array.from({length: n}, (_,i) => {
     const existing = old.find(p => p.id === i);
     return existing || {
-      id: i, name:'', zodiac:'', topic:'', color: PLAYER_COLORS[i],
+      id: i, name:'', zodiac:'', topic:'', color: null,
       phases: {body:[], mind:[], spirit:[]},
       nobleCarry: {body:0, mind:0, spirit:0},
       phaseDone: {body:false, mind:false, spirit:false},
@@ -724,7 +724,7 @@ function renderPlayerTabs() {
     const hasRolls = PHASES.some(ph => p.phases[ph].length > 0);
     const isActive = p.id === currentPlayerId;
     const name = p.name || '玩家'+(p.id+1);
-    const color = p.color || PLAYER_COLORS[p.id];
+    const color = p.color || '#B8A898';
     const activeBg = isActive ? `${color}18` : 'transparent';
     const borderTop = isActive ? `3px solid ${color}` : '3px solid transparent';
     return `<button class="tab ${isActive?'active player-active':''}"
@@ -751,7 +751,7 @@ function showColorPicker(id) {
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
       ${COLORS.map(({c,n}) => {
         const isSel = (p&&p.color===c);
-        const usedByOther = players.some(other => other.id !== id && (other.color||PLAYER_COLORS[other.id]) === c);
+        const usedByOther = players.some(other => other.id !== id && other.color === c);
         return `<button ${usedByOther&&!isSel?'disabled':''} onclick="setPlayerColor(${id},'${c}')" style="display:flex;flex-direction:column;align-items:center;gap:5px;border:2px solid ${isSel?c:'var(--border)'};border-radius:8px;padding:10px 4px;background:${isSel?c+'18':'transparent'};cursor:${usedByOther&&!isSel?'not-allowed':'pointer'};opacity:${usedByOther&&!isSel?'0.25':'1'};">
           <div style="width:28px;height:28px;border-radius:50%;background:${c};"></div>
           <span style="font-size:10px;color:${c};font-weight:500;">${n}</span>
