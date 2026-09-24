@@ -387,6 +387,8 @@ function nobleGiftType(r) {
 function infoTypeOf(r) {
   if (r.fromCarry) return (INFO_CELLS.includes(r.cellType) && r.cardName) ? r.cellType : null;
   if (isExtraNoble(r)) { const t = nobleGiftType(r); return (INFO_CELLS.includes(t) && r.cardName) ? t : null; }
+  // 附加命運之輪：自己得到牌，看抽到的牌種
+  if (r.isExtra && r.cellType === 'destiny') { const t = r.destinyCardType; return (INFO_CELLS.includes(t) && r.cardName) ? t : null; }
   if (r.cellType === 'golden') return r.goldenCardType || 'golden'; // 黃金格看實際抽到的牌種
   return INFO_CELLS.includes(r.cellType) ? r.cellType : null;
 }
@@ -1047,12 +1049,13 @@ function renderBlueprint(player) {
     const handIdsBp = new Set(activeInfoRolls(allRolls).map(r => r.id));
     const rolls = allRolls.filter(r => !isInfoRoll(r) || handIdsBp.has(r.id));
     // 收集可選的牌
-    const tarotRolls = rolls.filter(r => (r.cellType==='tarot'||r.cellType==='tarot-minor'||r.cellType==='golden'||r.cellType==='destiny') && r.cardName);
-    const issueRolls = rolls.filter(r => (r.cellType==='issue'||r.cellType==='golden') && r.cardName);
-    const guideRolls = rolls.filter(r => (r.cellType==='guide'||r.cellType==='golden') && r.cardName);
-    // 也檢查 extras 裡的貴人得牌
-    const extraCards = rolls.flatMap(r => (r.extras||[]).filter(e => e.cardName).map(e => ({cellType: e.nobleDice||e.destinyRole, cardName: e.cardName})))
-      .concat(rolls.filter(r => isExtraNoble(r) && isInfoRoll(r)).map(r => ({cellType: infoTypeOf(r), cardName: r.cardName})));
+    // 依實際得到的牌種分類（含黃金格、附加貴人、附加命運之輪、帶入貴人換的牌）
+    const handCards = rolls.filter(r => isInfoRoll(r) && r.cardName);
+    const tarotRolls = handCards.filter(r => cardGroupOf(r)==='tarot' || infoTypeOf(r)==='golden');
+    const issueRolls = handCards.filter(r => cardGroupOf(r)==='issue' || infoTypeOf(r)==='golden');
+    const guideRolls = handCards.filter(r => cardGroupOf(r)==='guide' || infoTypeOf(r)==='golden');
+    // 舊資料 extras 裡的得牌
+    const extraCards = rolls.flatMap(r => (r.extras||[]).filter(e => e.cardName).map(e => ({cellType: e.nobleDice||e.destinyRole, cardName: e.cardName})));
 
     const tarotOpts = [...tarotRolls, ...extraCards.filter(e => e.cellType==='tarot'||e.cellType==='tarot-minor')];
     const issueOpts = [...issueRolls, ...extraCards.filter(e => e.cellType==='issue')];
@@ -1069,7 +1072,7 @@ function renderBlueprint(player) {
     };
 
     const isTarotSelected = bp[ph].tarotId;
-    const isTarotMinor = tarotRolls.find(r => r.cardName===bp[ph].tarotId && (r.cellType==='tarot'||r.cellType==='tarot-minor'));
+    const isTarotMinor = tarotRolls.find(r => r.cardName===bp[ph].tarotId && cardGroupOf(r)==='tarot');
 
     const imgUrl = bp[ph].tarotId ? getCardImg(bp[ph].tarotId, bp[ph].tarotOrientation) : null;
     const issueImg = bp[ph].issueId ? getCardImg(bp[ph].issueId, '') : null;
