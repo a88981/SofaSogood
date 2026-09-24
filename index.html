@@ -185,8 +185,8 @@ textarea{resize:none;line-height:1.5;min-height:60px;}
 .tab-icon{font-size:17px;color:var(--text-dim);}
 .tab-label{font-size:10px;color:var(--text-dim);}
 .tab.active .tab-icon,.tab.active .tab-label{color:var(--gold);}
-.tab-dot{position:absolute;top:7px;right:calc(50% - 13px);width:6px;height:6px;border-radius:50%;background:var(--gold);display:none;}
-.tab-dot.show{display:block;}
+.tab-dot{display:none!important;}
+.tab-dot.show{display:none!important;}
 
 /* DRAWER */
 .drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:200;opacity:0;pointer-events:none;transition:opacity .25s;}
@@ -301,7 +301,7 @@ input[type="file"]{display:none;}
 
 <div class="header" id="mainHeader">
   <div class="header-top">
-    <span class="title">SofaSogood ✦ 答案</span>
+    <span class="title" onclick="location.reload()" style="cursor:pointer;">SofaSogood ✦ 答案</span>
     <div style="display:flex;gap:6px;align-items:center;">
       <button onclick="newGame()" style="font-size:11px;padding:5px 10px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text-muted);cursor:pointer;letter-spacing:.04em;">新遊戲</button>
       <button class="icon-btn" onclick="openDrawer()">☰</button>
@@ -535,8 +535,18 @@ function renderSetup() {
     html += `<div class="player-setup-card">
       <div class="player-setup-hd">
         <div style="display:flex;align-items:center;gap:8px;">
-          <div class="player-color-dot" style="background:${PLAYER_COLORS[i]}"></div>
+          <div class="player-color-dot" style="background:${p.color||PLAYER_COLORS[i]}"></div>
           <span class="player-setup-label">玩家 ${i+1}</span>
+        </div>
+      </div>
+      <div class="field-group">
+        <div class="field-label">顏色</div>
+        <div style="display:flex;gap:10px;">
+          ${[{c:'#6040A8',n:'紫'},{c:'#2050A0',n:'藍'},{c:'#A03020',n:'紅'},{c:'#3A7840',n:'綠'}].map(({c,n}) => {
+            const isSel = (p.color||PLAYER_COLORS[i]) === c;
+            const usedByOther = players.some(other => other.id !== p.id && (other.color||PLAYER_COLORS[other.id]) === c);
+            return `<button ${usedByOther&&!isSel ? 'disabled' : ''} onclick="setSetupColor(${p.id},'${c}')" style="width:36px;height:36px;border-radius:50%;background:${c};border:3px solid ${isSel?'#2C2218':'transparent'};cursor:${usedByOther&&!isSel?'not-allowed':'pointer'};opacity:${usedByOther&&!isSel?'0.25':'1'};transition:all .15s;" title="${usedByOther&&!isSel?'已被其他玩家使用':n}"></button>`;
+          }).join('')}
         </div>
       </div>
       <input type="text" placeholder="姓名（可選）" value="${p.name}" oninput="updatePlayerSetup(${p.id},'name',this.value)">
@@ -578,6 +588,12 @@ function initPlayers(n) {
       insight:'', action:''
     };
   });
+  renderSetup();
+}
+
+function setSetupColor(id, color) {
+  const p = players.find(x => x.id === id);
+  if (p) p.color = color;
   renderSetup();
 }
 
@@ -724,8 +740,7 @@ function renderPlayerTabs() {
 
 function showColorPicker(id) {
   const COLORS = [
-    {c:'#6040A8',n:'紫'},{c:'#2050A0',n:'藍'},{c:'#3A7840',n:'綠'},{c:'#A03020',n:'紅'},
-    {c:'#C07030',n:'橘'},{c:'#207080',n:'青'},{c:'#8040A0',n:'洋紅'},{c:'#507030',n:'草'},
+    {c:'#6040A8',n:'紫'},{c:'#2050A0',n:'藍'},{c:'#A03020',n:'紅'},{c:'#3A7840',n:'綠'},
   ];
   const p = players.find(x => x.id === id);
   const m = document.createElement('div');
@@ -734,10 +749,14 @@ function showColorPicker(id) {
   m.innerHTML = `<div style="background:var(--surface);border-radius:var(--radius);padding:20px 18px;width:100%;max-width:280px;display:flex;flex-direction:column;gap:14px;box-shadow:0 8px 32px rgba(0,0,0,0.2);" onclick="event.stopPropagation()">
     <div style="font-family:var(--font);font-size:14px;color:var(--text-muted);">選擇顏色</div>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
-      ${COLORS.map(({c,n}) => `<button onclick="setPlayerColor(${id},'${c}')" style="display:flex;flex-direction:column;align-items:center;gap:5px;border:2px solid ${(p&&p.color===c)?c:'var(--border)'};border-radius:8px;padding:10px 4px;background:${(p&&p.color===c)?c+'18':'transparent'};cursor:pointer;">
-        <div style="width:28px;height:28px;border-radius:50%;background:${c};"></div>
-        <span style="font-size:10px;color:${c};font-weight:500;">${n}</span>
-      </button>`).join('')}
+      ${COLORS.map(({c,n}) => {
+        const isSel = (p&&p.color===c);
+        const usedByOther = players.some(other => other.id !== id && (other.color||PLAYER_COLORS[other.id]) === c);
+        return `<button ${usedByOther&&!isSel?'disabled':''} onclick="setPlayerColor(${id},'${c}')" style="display:flex;flex-direction:column;align-items:center;gap:5px;border:2px solid ${isSel?c:'var(--border)'};border-radius:8px;padding:10px 4px;background:${isSel?c+'18':'transparent'};cursor:${usedByOther&&!isSel?'not-allowed':'pointer'};opacity:${usedByOther&&!isSel?'0.25':'1'};">
+          <div style="width:28px;height:28px;border-radius:50%;background:${c};"></div>
+          <span style="font-size:10px;color:${c};font-weight:500;">${n}</span>
+        </button>`;
+      }).join('')}
     </div>
     <button onclick="document.getElementById('colorPickerModal').remove()" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:var(--radius);background:transparent;color:var(--text-muted);font-size:13px;cursor:pointer;">取消</button>
   </div>`;
