@@ -1521,8 +1521,8 @@ function updateHandBar() {
         bar.appendChild(t);
       }
 
-      // 放下 ⚫（isExtra 放下，且尚未執行的）
-      if (r.isExtra && r.cellType === 'release' && !r.releasedCard) {
+      // 放下 ⚫（骰到放下格 或 附加放下未執行）
+      if (r.cellType === 'release' && !(r.isExtra && r.releasedCard)) {
         const t = document.createElement('div');
         t.style.cssText = 'flex-shrink:0;width:32px;height:50px;border-radius:3px;background:#2C2218;display:flex;align-items:center;justify-content:center;font-size:18px;';
         t.textContent = '⚫';
