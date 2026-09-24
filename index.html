@@ -2196,6 +2196,18 @@ if (loadCurrentSession() && players.length > 0 && players.some(p => PHASES.some(
 
 // 每 5 秒自動存一次
 setInterval(autoSave, 5000);
+
+// ── 內容區跟著上方標題列實際高度走，避免狀態列變兩行時遮住關卡 ──
+(function fitScrollArea() {
+  const header = document.getElementById('mainHeader');
+  const area = document.getElementById('scrollArea');
+  if (!header || !area) return;
+  const fit = () => { area.style.top = header.getBoundingClientRect().bottom + 'px'; };
+  fit();
+  if (window.ResizeObserver) new ResizeObserver(fit).observe(header);
+  window.addEventListener('resize', fit);
+  window.addEventListener('orientationchange', () => setTimeout(fit, 200));
+})();
 </script>
 <' + '/body>
 <' + '/html>
