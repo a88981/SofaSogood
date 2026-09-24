@@ -109,6 +109,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15
 .roll-header{padding:10px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);}
 .roll-meta{display:flex;align-items:center;gap:8px;}
 .roll-num{font-size:12px;color:var(--text-muted);font-weight:500;}
+.move-btn{width:26px;height:26px;border:1px solid var(--border);border-radius:50%;background:transparent;color:var(--text-muted);font-size:13px;line-height:1;cursor:pointer;padding:0;}
+.move-btn:disabled{opacity:.3;cursor:default;}
 .roll-dice{font-size:13px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:2px 8px;color:var(--text);}
 .cell-badge{font-size:12px;padding:3px 10px;border-radius:20px;}
 .cell-badge.tarot{background:var(--tarot-bg);color:var(--tarot-c);}
@@ -407,6 +409,20 @@ function activeInfoRolls(rolls, exceptId) {
   const gone = releasedNames(rolls, exceptId);
   return rolls.filter(r => isInfoRoll(r) && !(r.cardName && gone.includes(r.cardName)));
 }
+// 手牌依操作步驟排序：每一輪拿到什麼就放在那個位置
+function handItemsInOrder(rolls) {
+  const handIds = new Set(activeInfoRolls(rolls).map(r => r.id));
+  const { done } = releaseCounts(rolls);
+  let relIdx = 0;
+  const items = [];
+  rolls.forEach(r => {
+    if (isInfoRoll(r) && r.cardName) items.push({ kind:'info', roll:r, gone: !handIds.has(r.id) });
+    if (isNobleCard(r)) items.push({ kind:'noble', roll:r });
+    if (givesReleaseCard(r)) { items.push({ kind:'release', roll:r, used: relIdx < done }); relIdx++; }
+  });
+  return items;
+}
+
 // 放下卡張數 / 已執行 / 未執行
 function releaseCounts(rolls) {
   let cards = 0, done = 0;
@@ -846,16 +862,11 @@ function savePlayerName(id) {
   showToast('名稱已更新');
 }
 
-// 切換玩家：先記住目前玩家停在哪一關，切回來時回到那一關
+// 切換玩家：顯示該玩家目前進行中的關卡（第一個還沒過的關）
 function applyPlayerSwitch(id) {
-  const prev = getPlayer();
-  if (prev) prev.lastPhase = currentPhase;
   currentPlayerId = id;
   const player = getPlayer();
-  if (player && player.lastPhase) {
-    currentPhase = player.lastPhase;
-  } else if (player) {
-    // 還沒記錄過：找最新未完成的關卡
+  if (player) {
     if (!player.phaseDone['body']) currentPhase = 'body';
     else if (!player.phaseDone['mind']) currentPhase = 'mind';
     else if (!player.phaseDone['spirit']) currentPhase = 'spirit';
@@ -1375,6 +1386,8 @@ function renderRoll(r, idx, phaseRounds) {
         ${r.cardName ? `<span style="font-size:12px;color:var(--text-dim)">${r.cardName}${r.orientation?' '+r.orientation:''}</span>` : ''}
       </div>
       <div style="display:flex;align-items:center;gap:6px;">
+        <button class="move-btn" ${idx<=1?'disabled':''} onclick="event.stopPropagation();moveRoll(${r.id},-1)" title="往上移">↑</button>
+        <button class="move-btn" ${idx>=(phaseRounds||[]).length?'disabled':''} onclick="event.stopPropagation();moveRoll(${r.id},1)" title="往下移">↓</button>
         <span class="collapse-arrow">${isCollapsed?'›':'⌄'}</span>
         <button class="del-btn" onclick="event.stopPropagation();deleteRoll(${r.id})">×</button>
       </div>
@@ -1478,12 +1491,20 @@ function renderHandPageHTML(player) {
     html += `<div>
       <div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">${phaseName} 關${releaseNote}</div>
       <div class="hand-grid">
-        ${infoRolls.map(r => {
+        ${handItemsInOrder(rolls.filter(r => r.collapsed)).map(it => {
+          if (it.kind === 'noble') return `<div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+          <div style="width:100%;aspect-ratio:2/3;border-radius:4px;background:#F0EDE6;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:22px;">⚪</div>
+          <div class="hand-card-name">貴人</div>
+        </div>`;
+          if (it.kind === 'release') { const used = it.used; return `<div style="display:flex;flex-direction:column;align-items:center;gap:4px;${used?'opacity:.4;':''}">
+          <div style="width:100%;aspect-ratio:2/3;border-radius:4px;background:${used?'#9A948C':'#2C2218'};border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:22px;">⚫</div>
+          <div class="hand-card-name">${used?'放下（已執行）':'放下'}</div>
+        </div>`; }
+          const r = it.roll, gone = it.gone;
           const img = getCardImg(r.cardName, r.orientation);
           const t = infoTypeOf(r);
           const cls = t==='tarot'||t==='tarot-minor' ? 'tarot-c' : t==='issue' ? 'issue-c' : t==='guide' ? 'guide-c' : 'golden-c';
           const bgMap = {'tarot-c':'linear-gradient(160deg,#e8d4b0,#c09050)','issue-c':'linear-gradient(160deg,#b8cce8,#6090c8)','guide-c':'linear-gradient(160deg,#c8b8e0,#9870c8)','golden-c':'linear-gradient(160deg,#f0dea0,#c8a030)'};
-          const gone = !handIds.has(r.id);
           return `<div class="hand-card-item" style="${gone?'filter:grayscale(1);opacity:.4;':''}" onclick="showLightbox('${img||''}','${r.cardName||''}','${r.orientation||''}')">
             <div class="hand-card-img-wrap">
               ${img ? `<img src="${img}" alt="${r.cardName}">` : `<div class="hand-card-no-img" style="background:${bgMap[cls]||bgMap['tarot-c']}">${(r.cardName||'').slice(0,2)}</div>`}
@@ -1491,14 +1512,6 @@ function renderHandPageHTML(player) {
             <div class="hand-card-name">${r.cardName||''}${r.orientation?' '+r.orientation:''}${gone?'（已放下）':''}</div>
           </div>`;
         }).join('')}
-        ${nobles.map(() => `<div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
-          <div style="width:100%;aspect-ratio:2/3;border-radius:4px;background:#F0EDE6;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:22px;">⚪</div>
-          <div class="hand-card-name">貴人</div>
-        </div>`).join('')}
-        ${Array.from({length: rc.cards}).map((_, k) => { const used = k < rc.done; return `<div style="display:flex;flex-direction:column;align-items:center;gap:4px;${used?'opacity:.4;':''}">
-          <div style="width:100%;aspect-ratio:2/3;border-radius:4px;background:${used?'#9A948C':'#2C2218'};border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:22px;">⚫</div>
-          <div class="hand-card-name">${used?'放下（已執行）':'放下'}</div>
-        </div>`; }).join('')}
       </div>
     </div>`;
   });
@@ -1555,52 +1568,44 @@ function updateHandBar() {
 
   // 只顯示當前關卡的牌
   const rolls = player.phases[currentPhase] || [];
-  const handIds = new Set(activeInfoRolls(rolls).map(r => r.id));
-  rolls.forEach(r => {
-      // 訊息牌（已放下的變灰）
-      if (isInfoRoll(r) && r.cardName) {
-        const gone = !handIds.has(r.id);
-        const img = getCardImg(r.cardName, r.orientation);
-        const div = document.createElement('div');
-        div.style.cssText = 'flex-shrink:0;width:32px;height:50px;border-radius:3px;overflow:hidden;box-shadow:0 2px 5px rgba(124,98,72,0.22);cursor:pointer;' + (gone ? 'filter:grayscale(1);opacity:.4;' : '');
-        if (img) {
-          div.innerHTML = `<img src="${img}" style="width:100%;height:100%;object-fit:cover;" alt="${r.cardName}">`;
-        } else {
-          const bg = infoTypeOf(r)==='issue'?'#8090c0':infoTypeOf(r)==='guide'?'#9070c0':'#c0a060';
-          div.style.background = bg;
-          div.style.display = 'flex';
-          div.style.alignItems = 'center';
-          div.style.justifyContent = 'center';
-          div.style.fontSize = '9px';
-          div.style.color = '#fff';
-          div.style.textAlign = 'center';
-          div.textContent = (r.cardName||'').slice(0,2);
-        }
-        div.title = r.cardName + (r.orientation?' '+r.orientation:'') + (gone?'（已放下）':'');
-        div.onclick = () => showLightbox(img, r.cardName, r.orientation);
-        bar.appendChild(div);
+  // 依操作步驟的順序排列
+  handItemsInOrder(rolls).forEach(it => {
+    if (it.kind === 'info') {
+      const r = it.roll, gone = it.gone;
+      const img = getCardImg(r.cardName, r.orientation);
+      const div = document.createElement('div');
+      div.style.cssText = 'flex-shrink:0;width:32px;height:50px;border-radius:3px;overflow:hidden;box-shadow:0 2px 5px rgba(124,98,72,0.22);cursor:pointer;' + (gone ? 'filter:grayscale(1);opacity:.4;' : '');
+      if (img) {
+        div.innerHTML = `<img src="${img}" style="width:100%;height:100%;object-fit:cover;" alt="${r.cardName}">`;
+      } else {
+        const bg = infoTypeOf(r)==='issue'?'#8090c0':infoTypeOf(r)==='guide'?'#9070c0':'#c0a060';
+        div.style.background = bg;
+        div.style.display = 'flex';
+        div.style.alignItems = 'center';
+        div.style.justifyContent = 'center';
+        div.style.fontSize = '9px';
+        div.style.color = '#fff';
+        div.style.textAlign = 'center';
+        div.textContent = (r.cardName||'').slice(0,2);
       }
-
-      // 貴人 ⚪（附加貴人不算）
-      if (isNobleCard(r)) {
-        const t = document.createElement('div');
-        t.style.cssText = 'flex-shrink:0;width:32px;height:50px;border-radius:3px;border:1.5px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:18px;';
-        t.textContent = '⚪';
-        t.title = '貴人卡';
-        bar.appendChild(t);
-      }
-
+      div.title = r.cardName + (r.orientation?' '+r.orientation:'') + (gone?'（已放下）':'');
+      div.onclick = () => showLightbox(img, r.cardName, r.orientation);
+      bar.appendChild(div);
+    } else if (it.kind === 'noble') {
+      const t = document.createElement('div');
+      t.style.cssText = 'flex-shrink:0;width:32px;height:50px;border-radius:3px;border:1.5px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:18px;';
+      t.textContent = '⚪';
+      t.title = '貴人卡';
+      bar.appendChild(t);
+    } else {
+      const used = it.used;
+      const t = document.createElement('div');
+      t.style.cssText = 'flex-shrink:0;width:32px;height:50px;border-radius:3px;background:' + (used ? '#9A948C' : '#2C2218') + ';display:flex;align-items:center;justify-content:center;font-size:18px;' + (used ? 'opacity:.4;' : '');
+      t.textContent = '⚫';
+      t.title = used ? '放下卡（已執行）' : '放下卡（未執行）';
+      bar.appendChild(t);
+    }
   });
-  // 放下 ⚫：這關得到的每一張放下卡，已執行的變灰
-  const rc = releaseCounts(rolls);
-  for (let k = 0; k < rc.cards; k++) {
-    const used = k < rc.done;
-    const t = document.createElement('div');
-    t.style.cssText = 'flex-shrink:0;width:32px;height:50px;border-radius:3px;background:' + (used ? '#9A948C' : '#2C2218') + ';display:flex;align-items:center;justify-content:center;font-size:18px;' + (used ? 'opacity:.4;' : '');
-    t.textContent = '⚫';
-    t.title = used ? '放下卡（已執行）' : '放下卡（未執行）';
-    bar.appendChild(t);
-  }
 }
 
 function saveRoll(id) {
@@ -1614,10 +1619,14 @@ function saveRoll(id) {
   updateHandBar();
   autoSave();
   const status = calcPassStatus(player, currentPhase);
-  if (status.canPass) {
+  if (status.canPass && !player.phaseDone[currentPhase]) {
+    // 達標 → 自動進入下一關
+    const phase = currentPhase;
+    const nextPhase = phase === 'body' ? 'mind' : phase === 'mind' ? 'spirit' : null;
+    goNextPhase(nextPhase);
     saveCurrentSession();
     archiveCurrentSession();
-    showPassModal(player, currentPhase, status);
+    showPassModal(player, phase, status);
   } else {
     renderPhaseContent();
   }
@@ -1640,22 +1649,13 @@ function showPassModal(player, phase, status) {
     </div>
     <div style="background:linear-gradient(135deg,var(--pass-bg),#E4F2EA);border-radius:8px;padding:14px 16px;font-size:13px;color:var(--pass-c);line-height:1.8;">
       訊息卡 ${status.infoCount} 張 · 貴人卡 ${status.totalNobles} 張<br>
-      你可以繼續停留（最多累積 9 張），或進入下一關。
+      ${nextPhase ? `已自動進入「${PHASE_NAMES[nextPhase]}」關` : '已自動前往答案藍圖'}
     </div>
-    ${nextPhase ? `
-    <button onclick="goNextPhase('${nextPhase}')" style="width:100%;padding:14px;background:linear-gradient(135deg,#A07850,#7C5C38);border:none;border-radius:6px;color:#fff;font-size:15px;font-family:var(--font);letter-spacing:.08em;cursor:pointer;">
-      進入「${PHASE_NAMES[nextPhase]}」關 →
-    </button>` : `
-    <button onclick="goNextPhase(null)" style="width:100%;padding:14px;background:linear-gradient(135deg,#7A58A0,#5A3880);border:none;border-radius:6px;color:#fff;font-size:15px;font-family:var(--font);letter-spacing:.08em;cursor:pointer;">
-      前往答案藍圖 ✦
-    </button>`}
-    <button onclick="closePassModal()" style="width:100%;padding:12px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-muted);font-size:14px;cursor:pointer;letter-spacing:.04em;">
-      繼續停留在「${PHASE_NAMES[phase]}」關
+    <button onclick="closePassModal()" style="width:100%;padding:14px;background:linear-gradient(135deg,#A07850,#7C5C38);border:none;border-radius:6px;color:#fff;font-size:15px;font-family:var(--font);letter-spacing:.08em;cursor:pointer;">
+      知道了
     </button>
   </div>`;
   document.body.appendChild(modal);
-  // 自動新增下一輪（留在這關繼續）
-  addRoll();
 }
 
 function closePassModal() {
@@ -1685,6 +1685,20 @@ function addRoll() {
   });
   renderPhaseContent();
   setTimeout(() => { const a = document.getElementById('scrollArea'); a.scrollTop = a.scrollHeight; }, 60);
+}
+
+// 手動調整步驟順序
+function moveRoll(id, dir) {
+  const player = getPlayer(); if (!player) return;
+  const arr = player.phases[currentPhase];
+  const i = arr.findIndex(r => r.id === id);
+  const j = i + dir;
+  if (i < 0 || j < 0 || j >= arr.length) return;
+  [arr[i], arr[j]] = [arr[j], arr[i]];
+  renderPhaseContent();
+  updateHandBar();
+  autoSave();
+  setTimeout(() => { const el = document.getElementById('roll-'+id); if (el) el.scrollIntoView({block:'nearest'}); }, 30);
 }
 
 function deleteRoll(id) {
