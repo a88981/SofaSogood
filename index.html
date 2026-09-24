@@ -3,35 +3,62 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>答案 遊玩紀錄</title>
+<title>SofaSogood ✦ 答案遊戲紀錄</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500&display=swap');
+
 :root {
-  --bg: #f5f4f1; --surface: #fff; --card: #fafaf8;
-  --border: rgba(0,0,0,0.08); --border-strong: rgba(0,0,0,0.16);
-  --text: #1a1814; --text-muted: #6b6560; --text-dim: #b0aba4;
-  --gold: #9a7040; --gold-dim: rgba(154,112,64,0.09); --gold-border: rgba(154,112,64,0.3);
-  --body-c: #1a7a50; --body-bg: #edf7f2;
-  --mind-c: #1a50a0; --mind-bg: #edf2fb;
-  --spirit-c: #7030b0; --spirit-bg: #f3edfb;
-  --tarot-bg: #fff4e8; --tarot-c: #a05010;
-  --issue-bg: #e8f0ff; --issue-c: #1040a0;
-  --guide-bg: #f0e8ff; --guide-c: #6020a0;
-  --noble-bg: #f8f4e0; --noble-c: #806010;
-  --release-bg: #ebebf8; --release-c: #3030a0;
-  --destiny-bg: #edfaed; --destiny-c: #1a6a1a;
-  --pass-bg: #edfaf3; --pass-c: #1a7a50;
-  --warn-bg: #fffbeb; --warn-c: #92400e;
-  --err-bg: #fff5f5; --err-c: #dc2626;
-  --radius: 10px; --tab-h: 62px; --header-h: 54px; --header-status-h: 36px;
-  --font: 'Georgia','Noto Serif TC',serif;
-  --sans: -apple-system,'Helvetica Neue','Noto Sans TC',sans-serif;
+  /* 核心色 */
+  --bg: #F7F3EC;
+  --surface: #FDFCF9;
+  --card: #FAF8F4;
+  --border: rgba(124,98,72,0.10);
+  --border-strong: rgba(124,98,72,0.22);
+
+  /* 文字 */
+  --text: #2C2218;
+  --text-muted: #7A6A58;
+  --text-dim: #B8A898;
+
+  /* 主品牌色：卡其棕 */
+  --gold: #8C6E4E;
+  --gold-dim: rgba(140,110,78,0.08);
+  --gold-border: rgba(140,110,78,0.28);
+  --gold-light: #B8956A;
+
+  /* 三關色：降飽和、偏暖 */
+  --body-c: #A03020;   --body-bg: #FAF0EE;
+  --mind-c: #2050A0;   --mind-bg: #EEF2FA;
+  --spirit-c: #6040A8; --spirit-bg: #F3EEFA;
+
+  /* 牌卡標籤 */
+  --tarot-bg: #FBF4EA; --tarot-c: #8C5E28;
+  --issue-bg: #EEF1FB; --issue-c: #3A5896;
+  --guide-bg: #F3EEFA; --guide-c: #6040A0;
+  --noble-bg: #FAF5E4; --noble-c: #7A6018;
+  --release-bg: #F0EEF8; --release-c: #5050A0;
+  --destiny-bg: #EDF7EE; --destiny-c: #3A7040;
+  --golden-bg: #FBF7E4; --golden-c: #806820;
+
+  /* 狀態 */
+  --pass-bg: #EEF6F1; --pass-c: #3A6E50;
+  --warn-bg: #FBF5E6; --warn-c: #8C5A18;
+  --err-bg: #FBF0EE; --err-c: #A03030;
+
+  --radius: 6px;
+  --tab-h: 62px; --hand-h: 68px;
+  --header-h: 54px;
+  --header-status-h: 36px;
+  --font: 'Noto Serif TC','Georgia',serif;
+  --sans: 'Noto Serif TC',-apple-system,'Helvetica Neue',sans-serif;
 }
+
 html,body{height:100%;overflow:hidden;}
-body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15px;letter-spacing:0.01em;}
 
 /* HEADER */
-.header{position:fixed;top:0;left:0;right:0;background:var(--surface);border-bottom:1px solid var(--border);z-index:100;}
+.header{position:fixed;top:0;left:0;right:0;background:linear-gradient(180deg,#FDFCF9 70%,rgba(253,252,249,0.95));border-bottom:1px solid var(--border);z-index:100;backdrop-filter:blur(8px);}
 .header-top{height:54px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;}
 .header-status{padding:0 14px 8px;}
 .header-status:empty{display:none;}
@@ -39,23 +66,28 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15
 .status-bar.pass{background:var(--pass-bg);color:var(--pass-c);}
 .status-bar.warn{background:var(--warn-bg);color:var(--warn-c);}
 .status-bar.limit{background:var(--err-bg);color:var(--err-c);}
-.title{font-family:var(--font);font-size:18px;color:var(--gold);letter-spacing:.04em;flex-shrink:0;}
+.title{font-family:var(--font);font-size:15px;color:var(--gold);letter-spacing:.06em;font-weight:400;flex-shrink:0;}
 .player-tabs{display:flex;gap:5px;flex:1;justify-content:center;}
 .ptab{padding:6px 12px;border-radius:20px;border:1px solid var(--border-strong);background:none;font-size:13px;color:var(--text-muted);cursor:pointer;white-space:nowrap;}
 .ptab.active{background:var(--gold);color:#fff;border-color:var(--gold);}
-.icon-btn{width:36px;height:36px;border-radius:50%;border:1px solid var(--border-strong);background:var(--surface);color:var(--text-muted);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;flex-shrink:0;}
+.icon-btn{width:36px;height:36px;border-radius:50%;border:1px solid var(--border);background:transparent;color:var(--text-muted);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;flex-shrink:0;}
 
 /* SCROLL */
-.scroll-area{position:fixed;top:calc(var(--header-h) + var(--header-status-h));left:0;right:0;bottom:var(--tab-h);overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 14px 80px;display:flex;flex-direction:column;gap:12px;}
+.scroll-area{position:fixed;top:calc(var(--header-h) + var(--header-status-h));left:0;right:0;bottom:calc(var(--tab-h) + var(--hand-h));overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 14px 80px;display:flex;flex-direction:column;gap:12px;}
 
 /* PHASE STRIP */
 .phase-strip{display:flex;gap:6px;}
-.phase-chip{flex:1;padding:10px 6px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface);text-align:center;cursor:pointer;transition:all .15s;}
-.phase-chip.active.body{background:var(--body-bg);border-color:var(--body-c);color:var(--body-c);}
-.phase-chip.active.mind{background:var(--mind-bg);border-color:var(--mind-c);color:var(--mind-c);}
-.phase-chip.active.spirit{background:var(--spirit-bg);border-color:var(--spirit-c);color:var(--spirit-c);}
+.phase-chip{flex:1;padding:10px 6px;border-radius:var(--radius);border:1px solid var(--border);text-align:center;cursor:pointer;transition:all .2s;}
+.phase-chip.body{background:linear-gradient(135deg,#FAF0EE,#F5E6E2);border-color:rgba(160,48,32,0.2);color:var(--body-c);}
+.phase-chip.mind{background:linear-gradient(135deg,#EEF2FA,#E4EDFA);border-color:rgba(32,80,160,0.2);color:var(--mind-c);}
+.phase-chip.spirit{background:linear-gradient(135deg,#F3EEFA,#EAE0F8);border-color:rgba(96,64,168,0.2);color:var(--spirit-c);}
+.phase-chip.blueprint{background:linear-gradient(135deg,#FAF5E4,#F0E8D0);border-color:rgba(140,110,78,0.25);color:var(--gold);}
+.phase-chip.active.body{background:linear-gradient(135deg,#F5E0DA,#EDD0C8);border-color:var(--body-c);font-weight:600;}
+.phase-chip.active.mind{background:linear-gradient(135deg,#DDE8F8,#CCDAF5);border-color:var(--mind-c);font-weight:600;}
+.phase-chip.active.spirit{background:linear-gradient(135deg,#E8DDF8,#DDD0F5);border-color:var(--spirit-c);font-weight:600;}
+.phase-chip.active.blueprint{background:linear-gradient(135deg,#F0E4C0,#E8D8A8);border-color:var(--gold);font-weight:600;}
 .phase-chip.done::after{content:'✓';display:block;font-size:11px;opacity:.7;}
-.pc-name{font-size:13px;font-weight:600;}
+.pc-name{font-size:13px;font-weight:500;letter-spacing:.02em;}
 .pc-count{font-size:11px;opacity:.65;margin-top:2px;}
 
 /* PASS STATUS */
@@ -72,7 +104,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15
 
 /* ROUND LOG */
 .round-log{display:flex;flex-direction:column;gap:8px;}
-.roll-entry{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+.roll-entry{background:linear-gradient(160deg,#FDFCF9 0%,#FAF7F0 100%);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:0 2px 6px rgba(124,98,72,0.07);}
 .roll-header{padding:10px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);}
 .roll-meta{display:flex;align-items:center;gap:8px;}
 .roll-num{font-size:12px;color:var(--text-muted);font-weight:500;}
@@ -84,15 +116,20 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15
 .cell-badge.noble{background:var(--noble-bg);color:var(--noble-c);}
 .cell-badge.release{background:var(--release-bg);color:var(--release-c);}
 .cell-badge.destiny{background:var(--destiny-bg);color:var(--destiny-c);}
-.cell-badge.golden{background:#fffbe8;color:#92680a;}
-.ct-btn.active.golden{background:#fffbe8;color:#92680a;border-color:#92680a;}
-.rule-note.golden{background:#fffbe8;border:1px solid rgba(146,104,10,.2);}
+.cell-badge.golden{background:var(--golden-bg);color:var(--golden-c);}
+.ct-btn.active.golden{background:var(--golden-bg);color:var(--golden-c);border-color:var(--golden-c);}
+.rule-note.golden{background:var(--golden-bg);border-color:var(--golden-c);}
 .del-btn{width:28px;height:28px;border-radius:50%;border:none;background:none;color:var(--text-dim);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
-.del-btn:active{background:#fee2e2;color:#dc2626;}
+.del-btn:active{background:var(--err-bg);color:var(--err-c);}
 .roll-body{padding:12px 14px;display:flex;flex-direction:column;gap:10px;}
 
 /* PHOTO AREA */
-.card-img{width:100%;max-height:200px;object-fit:contain;border-radius:var(--radius);display:block;background:var(--bg);}
+.card-img-wrap{display:flex;gap:10px;align-items:flex-start;background:linear-gradient(135deg,#FAF7F0,#F5EFE4);border:1px solid var(--border);border-radius:var(--radius);padding:10px;margin-top:2px;}
+.card-img-thumb{width:56px;height:88px;object-fit:cover;border-radius:4px;flex-shrink:0;box-shadow:0 2px 6px rgba(124,98,72,0.15);}
+.card-img-info{display:flex;flex-direction:column;gap:4px;justify-content:center;flex:1;}
+.card-img-name{font-size:15px;color:var(--text);font-family:var(--font);font-weight:400;letter-spacing:.04em;}
+.card-img-orient{font-size:11px;color:var(--text-muted);letter-spacing:.06em;text-transform:uppercase;}
+.card-img-type{font-size:11px;color:var(--text-dim);margin-top:2px;}
 .ai-scanning{position:absolute;inset:0;background:rgba(255,255,255,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;font-size:13px;color:var(--text-muted);}
 .spinner{width:24px;height:24px;border:3px solid var(--border-strong);border-top-color:var(--gold);border-radius:50%;animation:spin .7s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
@@ -102,9 +139,9 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:15
 
 /* FIELDS */
 .field-group{display:flex;flex-direction:column;gap:6px;}
-.field-label{font-size:12px;color:var(--text-muted);font-weight:500;}
+.field-label{font-size:11px;color:var(--text-muted);font-weight:400;letter-spacing:.06em;text-transform:uppercase;}
 .ct-btns{display:flex;flex-wrap:wrap;gap:6px;}
-.ct-btn{font-size:12px;padding:7px 12px;border-radius:20px;border:1px solid var(--border-strong);background:var(--bg);color:var(--text-muted);cursor:pointer;white-space:nowrap;}
+.ct-btn{font-size:12px;padding:7px 14px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text-muted);cursor:pointer;white-space:nowrap;letter-spacing:.01em;}
 .ct-btn.active.tarot{background:var(--tarot-bg);color:var(--tarot-c);border-color:var(--tarot-c);}
 .ct-btn.active.issue{background:var(--issue-bg);color:var(--issue-c);border-color:var(--issue-c);}
 .ct-btn.active.guide{background:var(--guide-bg);color:var(--guide-c);border-color:var(--guide-c);}
@@ -116,8 +153,8 @@ select:focus,input:focus,textarea:focus{border-color:var(--gold);}
 input::placeholder,textarea::placeholder{color:var(--text-dim);}
 textarea{resize:none;line-height:1.5;min-height:60px;}
 .orient-btns{display:flex;gap:8px;}
-.orient-btn{flex:1;padding:9px;border-radius:var(--radius);border:1px solid var(--border-strong);background:var(--bg);color:var(--text-muted);font-size:13px;cursor:pointer;text-align:center;}
-.orient-btn.active{background:var(--tarot-bg);color:var(--tarot-c);border-color:var(--tarot-c);font-weight:600;}
+.orient-btn{flex:1;padding:9px;border-radius:var(--radius);border:1px solid var(--border);background:transparent;color:var(--text-muted);font-size:13px;cursor:pointer;text-align:center;letter-spacing:.02em;}
+.orient-btn.active{background:linear-gradient(135deg,#FBF4EA,#F5EAD8);color:var(--tarot-c);border-color:var(--tarot-c);font-weight:500;}
 
 /* ADD ROLL BTN */
 .add-roll-btn{width:100%;padding:13px;border-radius:var(--radius);border:1px dashed var(--gold-border);background:var(--gold-dim);color:var(--gold);font-size:14px;cursor:pointer;text-align:center;}
@@ -127,7 +164,20 @@ textarea{resize:none;line-height:1.5;min-height:60px;}
 .fab-unused{display:none;}
 
 /* TAB BAR */
-.tab-bar{position:fixed;bottom:0;left:0;right:0;height:var(--tab-h);background:var(--surface);border-top:1px solid var(--border);display:flex;z-index:100;}
+.hand-bar{position:fixed;bottom:var(--tab-h);left:0;right:0;height:var(--hand-h);background:linear-gradient(180deg,#F7F2EA,#FDFCF9);border-top:1px solid var(--border);display:flex;align-items:center;gap:6px;padding:0 12px;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;z-index:99;scrollbar-width:none;}
+.hand-bar::-webkit-scrollbar{display:none;}
+.hand-bar-label{font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim);flex-shrink:0;margin-right:2px;}
+.hand-card-mini{flex-shrink:0;width:32px;height:50px;border-radius:3px;box-shadow:0 2px 5px rgba(124,98,72,0.2);overflow:hidden;position:relative;cursor:pointer;transition:transform .15s;}
+.hand-card-mini:hover{transform:translateY(-3px);}
+.hand-card-mini img{width:100%;height:100%;object-fit:cover;}
+.hand-card-mini.no-img{display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:500;color:rgba(255,255,255,0.9);}
+.hand-card-mini.tarot-c{background:linear-gradient(160deg,#e8d4b0,#c09050);}
+.hand-card-mini.issue-c{background:linear-gradient(160deg,#b8cce8,#7098c8);}
+.hand-card-mini.guide-c{background:linear-gradient(160deg,#c8b8e0,#9870c8);}
+.hand-card-mini.noble-c{background:linear-gradient(160deg,#e8dea0,#c0a830);}
+.hand-card-mini.destiny-c{background:linear-gradient(160deg,#a8d8b0,#50a868);}
+.hand-card-mini.golden-c{background:linear-gradient(160deg,#f0dea0,#c8a030);}
+.tab-bar{position:fixed;bottom:0;left:0;right:0;height:var(--tab-h);background:linear-gradient(0deg,#FDFCF9 60%,rgba(247,243,236,0.96));border-top:1px solid var(--border);display:flex;z-index:100;}
 .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:none;background:none;cursor:pointer;padding:6px 0;position:relative;}
 .tab-icon{font-size:17px;color:var(--text-dim);}
 .tab-label{font-size:10px;color:var(--text-dim);}
@@ -138,9 +188,9 @@ textarea{resize:none;line-height:1.5;min-height:60px;}
 /* DRAWER */
 .drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:200;opacity:0;pointer-events:none;transition:opacity .25s;}
 .drawer-overlay.open{opacity:1;pointer-events:all;}
-.drawer{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-radius:20px 20px 0 0;z-index:201;transform:translateY(100%);transition:transform .3s cubic-bezier(.32,.72,0,1);max-height:90vh;display:flex;flex-direction:column;}
+.drawer{position:fixed;bottom:0;left:0;right:0;background:linear-gradient(180deg,#FAF8F2 0%,#FDFCF9 40%);border-radius:14px 14px 0 0;z-index:201;transform:translateY(100%);transition:transform .3s cubic-bezier(.32,.72,0,1);max-height:90vh;display:flex;flex-direction:column;}
 .drawer.open{transform:translateY(0);}
-.drawer-handle{width:36px;height:4px;background:var(--border-strong);border-radius:2px;margin:12px auto 0;flex-shrink:0;}
+.drawer-handle{width:32px;height:3px;background:var(--border);border-radius:2px;margin:14px auto 0;flex-shrink:0;}
 .drawer-title{font-size:16px;font-weight:600;padding:14px 18px 12px;border-bottom:1px solid var(--border);flex-shrink:0;}
 .drawer-body{overflow-y:auto;-webkit-overflow-scrolling:touch;padding:16px 18px;display:flex;flex-direction:column;gap:14px;flex:1;}
 
@@ -150,9 +200,9 @@ textarea{resize:none;line-height:1.5;min-height:60px;}
 .summary-grid{display:flex;flex-direction:column;gap:8px;}
 .scard{background:var(--card);border-radius:var(--radius);overflow:hidden;border:1px solid var(--border);}
 .scard-hd{padding:9px 14px;font-size:13px;font-weight:500;display:flex;justify-content:space-between;}
-.scard-hd.body{background:var(--body-bg);color:var(--body-c);}
-.scard-hd.mind{background:var(--mind-bg);color:var(--mind-c);}
-.scard-hd.spirit{background:var(--spirit-bg);color:var(--spirit-c);}
+.scard-hd.body{background:linear-gradient(90deg,#FAF0EE,#F5E4E0);color:var(--body-c);}
+.scard-hd.mind{background:linear-gradient(90deg,#EEF2F9,#E6EEF8);color:var(--mind-c);}
+.scard-hd.spirit{background:linear-gradient(90deg,#F4EFF9,#EDE6F6);color:var(--spirit-c);}
 .scard-bd{padding:8px 14px;display:flex;flex-direction:column;gap:4px;}
 .scard-row{font-size:12px;color:var(--text-muted);display:flex;gap:6px;}
 .scard-idx{color:var(--text-dim);flex-shrink:0;}
@@ -162,22 +212,22 @@ textarea{resize:none;line-height:1.5;min-height:60px;}
 .bp-val{font-size:12px;color:var(--text-muted);font-style:italic;min-height:24px;}
 .export-btns{display:flex;flex-direction:column;gap:8px;}
 .export-btn{width:100%;padding:13px;border-radius:var(--radius);border:1px solid var(--border-strong);background:var(--bg);color:var(--text);font-size:14px;cursor:pointer;text-align:center;}
-.export-btn.primary{background:var(--gold);border-color:var(--gold);color:#fff;font-weight:500;}
+.export-btn.primary{background:linear-gradient(135deg,#A07850 0%,#7C5C38 100%);border-color:transparent;color:#fff;font-weight:400;letter-spacing:.06em;}
 .export-btn:active{opacity:.8;}
 
 /* SETUP SCREEN */
 .setup-screen{display:flex;flex-direction:column;gap:16px;}
-.setup-title{font-size:16px;font-weight:600;color:var(--text);}
+.setup-title{font-size:16px;font-weight:400;color:var(--text);font-family:var(--font);letter-spacing:.04em;}
 .setup-subtitle{font-size:13px;color:var(--text-muted);margin-top:-8px;}
-.player-setup-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;display:flex;flex-direction:column;gap:10px;}
+.player-setup-card{background:linear-gradient(150deg,#FDFCF9 0%,#F9F5EE 100%);border:1px solid var(--border);border-radius:var(--radius);padding:14px;display:flex;flex-direction:column;gap:10px;}
 .player-setup-hd{display:flex;align-items:center;justify-content:space-between;}
 .player-setup-label{font-size:13px;font-weight:600;color:var(--text);}
 .player-color-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
-.start-btn{width:100%;padding:14px;border-radius:var(--radius);background:var(--gold);border:none;color:#fff;font-size:16px;font-weight:600;cursor:pointer;}
+.start-btn{width:100%;padding:14px;border-radius:var(--radius);background:linear-gradient(135deg,#A07850 0%,#7C5C38 100%);border:none;color:#fff;font-size:15px;font-weight:400;cursor:pointer;letter-spacing:.1em;}
 .start-btn:active{opacity:.8;}
 
 .empty-state{text-align:center;padding:40px 20px;color:var(--text-dim);font-size:14px;line-height:2;}
-.toast{position:fixed;bottom:calc(var(--tab-h)+10px);left:50%;transform:translateX(-50%) translateY(8px);background:#1a3a1a;border:1px solid rgba(26,122,80,.5);color:#4ecb8d;padding:9px 18px;border-radius:20px;font-size:13px;opacity:0;white-space:nowrap;pointer-events:none;z-index:300;transition:all .2s;}
+.toast{position:fixed;bottom:calc(var(--tab-h) + var(--hand-h) + 8px);left:50%;transform:translateX(-50%) translateY(8px);background:var(--text);border:none;color:var(--surface);padding:10px 20px;border-radius:20px;font-size:13px;opacity:0;white-space:nowrap;pointer-events:none;z-index:300;transition:all .2s;letter-spacing:.03em;}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
 ::-webkit-scrollbar{width:0;}
 input[type="file"]{display:none;}
@@ -185,10 +235,10 @@ input[type="file"]{display:none;}
 /* SECTION DIVIDER */
 .section-divider{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--text-dim);display:flex;align-items:center;gap:8px;}
 .section-divider::before,.section-divider::after{content:'';flex:1;height:1px;background:var(--border);}
-.rule-note{border-radius:var(--radius);padding:10px 12px;}
-.rule-note.noble{background:var(--noble-bg);border:1px solid rgba(128,96,16,.2);}
-.rule-note.release{background:#f0f8f0;border:1px solid rgba(26,100,26,.2);}
-.rule-note.destiny{background:var(--destiny-bg);border:1px solid rgba(26,106,26,.2);}
+.rule-note{border-radius:4px;padding:10px 14px;border-left:3px solid currentColor;}
+.rule-note.noble{background:var(--noble-bg);border-color:var(--noble-c);}
+.rule-note.release{background:var(--pass-bg);border-color:var(--pass-c);}
+.rule-note.destiny{background:var(--destiny-bg);border-color:var(--destiny-c);}
 .rule-note-title{font-size:13px;font-weight:600;margin-bottom:5px;color:var(--text);}
 .rule-note-body{font-size:12px;color:var(--text-muted);line-height:1.8;}
 .guide-groups{display:flex;flex-direction:column;gap:10px;}
@@ -196,28 +246,31 @@ input[type="file"]{display:none;}
 .guide-btns{display:flex;flex-wrap:wrap;gap:5px;}
 .guide-btn{font-size:12px;padding:6px 10px;border-radius:16px;border:1px solid var(--border-strong);background:var(--bg);color:var(--text-muted);cursor:pointer;white-space:nowrap;transition:all .12s;}
 .suit-btns{display:flex;gap:10px;justify-content:center;}
-.suit-btn{width:64px;height:64px;border-radius:50%;border:2px solid var(--border-strong);background:var(--bg);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:all .15s;}
+.suit-btn{width:64px;height:64px;border-radius:50%;border:1.5px solid var(--border);background:linear-gradient(160deg,#FDFCF9,#F5F0E8);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:all .2s;box-shadow:0 1px 4px rgba(124,98,72,0.10);}
 .suit-btn:active{transform:scale(.93);}
-.suit-btn.active{border-color:var(--gold);background:var(--gold-dim);box-shadow:0 0 0 3px var(--gold-border);}
+.suit-btn.active{border-color:var(--gold);background:linear-gradient(135deg,rgba(140,110,78,0.10),rgba(140,110,78,0.04));box-shadow:0 0 0 2px var(--gold-border);}
 .suit-icon{font-size:22px;line-height:1;}
 .suit-name{font-size:11px;color:var(--text-muted);font-weight:500;}
 .suit-btn.active .suit-name{color:var(--gold);}
 .extra-section{display:flex;flex-direction:column;gap:8px;border-top:1px solid var(--border);padding-top:12px;margin-top:4px;}
 .extra-title{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--text-dim);}
 .extra-add-row{display:flex;gap:6px;flex-wrap:wrap;}
-.extra-add-btn{font-size:12px;padding:6px 12px;border-radius:20px;border:1px dashed var(--border-strong);background:none;color:var(--text-muted);cursor:pointer;}
+.extra-add-btn{font-size:12px;padding:6px 14px;border-radius:20px;border:1px dashed var(--border);background:none;color:var(--text-muted);cursor:pointer;letter-spacing:.02em;}
 .extra-add-btn:active{background:var(--bg);}
-.extra-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
+.extra-card{background:linear-gradient(160deg,#F9F5EE,#F4EFE6);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;}
 .extra-card-hd{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--border);}
 .extra-card-label{font-size:13px;font-weight:500;color:var(--text-muted);}
 .extra-card-body{padding:10px 12px;display:flex;flex-direction:column;gap:10px;}
 .roll-header{cursor:pointer;user-select:none;}
+.roll-save-btn{width:100%;padding:11px;border:none;border-top:1px solid var(--border);background:linear-gradient(135deg,#A07850,#7C5C38);color:#fff;font-size:13px;letter-spacing:.08em;cursor:pointer;font-family:var(--font);}
+.roll-save-btn.saved{background:transparent;color:var(--text-dim);font-size:12px;border-top:1px solid var(--border);}
+.roll-save-btn:active{opacity:.8;}
 .collapse-arrow{font-size:16px;color:var(--text-dim);transition:transform .15s;}
 .roll-entry.collapsed .roll-header{border-bottom:none;}
-.phase-chip.active.blueprint{background:#fff9e8;border-color:#92680a;color:#92680a;}
+.phase-chip.active.blueprint{background:var(--golden-bg);border-color:var(--golden-c);color:var(--golden-c);}
 .bp-phase-block{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:4px;}
 .bp-phase-title{padding:10px 14px;font-size:13px;font-weight:600;}
-.bp-phase-title.body{background:var(--body-bg);color:var(--body-c);}
+.bp-phase-title.body{background:linear-gradient(90deg,#FAF0EE,#F5E4E0);color:var(--body-c);}
 .bp-phase-title.mind{background:var(--mind-bg);color:var(--mind-c);}
 .bp-phase-title.spirit{background:var(--spirit-bg);color:var(--spirit-c);}
 .bp-card-row{padding:12px 14px;display:flex;flex-direction:column;gap:12px;}
@@ -232,8 +285,11 @@ input[type="file"]{display:none;}
 
 <div class="header" id="mainHeader">
   <div class="header-top">
-    <span class="title">答案</span>
-    <button class="icon-btn" onclick="openDrawer()">☰</button>
+    <span class="title">SofaSogood ✦ 答案</span>
+    <div style="display:flex;gap:6px;align-items:center;">
+      <button onclick="newGame()" style="font-size:11px;padding:5px 10px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text-muted);cursor:pointer;letter-spacing:.04em;">新遊戲</button>
+      <button class="icon-btn" onclick="openDrawer()">☰</button>
+    </div>
   </div>
   <div class="header-status" id="headerStatus"></div>
 </div>
@@ -242,6 +298,9 @@ input[type="file"]{display:none;}
   <div id="mainContent"></div>
 </div>
 
+<div class="hand-bar" id="handBar">
+  <span class="hand-bar-label">手牌</span>
+</div>
 <div class="tab-bar" id="tabBar">
   <div id="playerTabsBar" style="display:contents;"></div>
   <button class="tab" id="tab-overview" onclick="openDrawer()">
@@ -267,12 +326,13 @@ const PHASE_NAMES = {body:'身',mind:'心',spirit:'靈'};
 const PHASE_DESC  = {body:'身 · 行動層',mind:'心 · 情感層',spirit:'靈 · 靈魂層'};
 const PLAYER_COLORS = ['#9a7040','#1a7a50','#1a50a0','#7030b0'];
 const ZODIAC_GROUPS = {
-  fire:['白羊座','獅子座','射手座'],
-  earth:['金牛座','處女座','摩羯座'],
-  air:['雙子座','天秤座','水瓶座'],
-  water:['巨蟹座','天蠍座','雙魚座']
+  fire:  ['白羊','獅子','射手'],
+  earth: ['金牛','處女','摩羯'],
+  air:   ['雙子','天秤','水瓶'],
+  water: ['巨蟹','天蠍','雙魚'],
 };
 const ZODIAC_LABEL = {fire:'火象',earth:'土象',air:'風象',water:'水象'};
+const ZODIAC_COLOR = {fire:'#A03020',earth:'#8C5E28',air:'#6040A8',water:'#2050A0'};
 
 const CELL_TYPES = [
   {key:'noble',        label:'貴人',   cls:'noble'},
@@ -344,27 +404,51 @@ let nextId = 1;
 // ── PASS LOGIC ──
 function calcPassStatus(player, phase) {
   const rolls = player.phases[phase];
+
+  // 放下卡：主格子 release + 附加事件 release
+  const releaseCards = rolls.reduce((acc, r) => {
+    if (r.cellType === 'release') acc++;
+    (r.extras||[]).forEach(e => { if (e.type === 'release') acc++; });
+    return acc;
+  }, 0);
+
+  // 已放下的張數（有填 releasedCard 的附加事件）
+  const releasedDone = rolls.reduce((acc, r) => {
+    (r.extras||[]).forEach(e => { if (e.type === 'release' && e.releasedCard) acc++; });
+    return acc;
+  }, 0);
+
+  // 未執行的放下卡
+  const pendingRelease = releaseCards - releasedDone;
+
+  // 有未執行的放下卡 → 不能過關
+  if (pendingRelease > 0) {
+    const infoCards = rolls.filter(r => INFO_CELLS.includes(r.cellType));
+    return {
+      canPass: false, blocked: true, pendingRelease,
+      infoCount: infoCards.length, has3Types: false, hasNoble: false,
+      missing: [], atLimit: infoCards.length >= 9, totalNobles: 0,
+      passA: false, passB: false,
+    };
+  }
+
   const infoCards = rolls.filter(r => INFO_CELLS.includes(r.cellType));
   const nobles = rolls.filter(r => r.cellType === 'noble').length;
   const nobleCarry = player.nobleCarry[phase] || 0;
   const totalNobles = nobles + nobleCarry;
 
-  const hasTarot  = infoCards.some(r => r.cellType === 'tarot' || r.cellType === 'tarot-minor');
-  const hasIssue  = infoCards.some(r => r.cellType === 'issue');
-  const hasGuide  = infoCards.some(r => r.cellType === 'guide');
+  const hasTarot = infoCards.some(r => r.cellType === 'tarot' || r.cellType === 'tarot-minor');
+  const hasIssue = infoCards.some(r => r.cellType === 'issue');
+  const hasGuide = infoCards.some(r => r.cellType === 'guide');
   const has3Types = hasTarot && hasIssue && hasGuide;
-
   const infoCount = infoCards.length;
   const hasNoble  = totalNobles >= 1;
+  const atLimit   = infoCount >= 9;
 
-  // 上限 9 張訊息卡
-  const atLimit = infoCount >= 9;
-
-  // 過關條件 A: 4張訊息卡(含3種) + 1張貴人卡
-  const passA = infoCount >= 4 && has3Types && hasNoble;
-  // 過關條件 B: 7張訊息卡(任意) + 1張貴人卡
+  // 方式A：塔羅、議題、指引各至少1張（共3張）+ 貴人卡
+  const passA = has3Types && hasNoble;
+  // 方式B：7張訊息卡（任意）+ 貴人卡
   const passB = infoCount >= 7 && hasNoble;
-
   const canPass = passA || passB;
 
   const missing = [];
@@ -373,7 +457,21 @@ function calcPassStatus(player, phase) {
   if (!hasGuide) missing.push('指引卡');
   if (!hasNoble) missing.push('貴人卡×1');
 
-  return { canPass, passA, passB, infoCount, has3Types, hasNoble, missing, atLimit, totalNobles };
+  // 智慧提示：分析放下後能否過關
+  // 放下規則：塔羅、議題、指引各需保留至少 1 張
+  let releaseHint = null;
+  if (!canPass && releaseCards === 0 && has3Types && hasNoble) {
+    const tarotCount = infoCards.filter(r => r.cellType==='tarot'||r.cellType==='tarot-minor').length;
+    const issueCount = infoCards.filter(r => r.cellType==='issue').length;
+    const guideCount = infoCards.filter(r => r.cellType==='guide').length;
+    const maxDrop = Math.max(0, tarotCount-1) + Math.max(0, issueCount-1) + Math.max(0, guideCount-1);
+    if (maxDrop > 0 && (infoCount - maxDrop) >= 7 && hasNoble) {
+      releaseHint = `最多可放下 ${maxDrop} 張後達方式②過關`;
+    }
+  }
+
+  return { canPass, passA, passB, blocked: false, pendingRelease: 0,
+    infoCount, has3Types, hasNoble, missing, atLimit, totalNobles, releaseHint };
 }
 
 function calcNobleCarryForward(player, phase) {
@@ -391,10 +489,20 @@ function getRolls() { const p = getPlayer(); return p ? p.phases[currentPhase] :
 // ── SETUP ──
 function renderSetup() {
   const numPlayers = players.length || 2;
+  const today = new Date().toISOString().slice(0,10);
+  if (!window._sessionDate) window._sessionDate = today;
+
+  const saved = loadAllSessions();
+  const hasSaved = saved.length > 0;
+
   let html = `<div class="setup-screen">
     <div>
-      <div class="setup-title">🃏 答案・遊戲設定</div>
+      <div class="setup-title">✦ 答案・遊戲設定</div>
       <div class="setup-subtitle" style="margin-top:6px;font-size:13px;color:var(--text-muted)">請填入玩家資料後開始遊戲</div>
+    </div>
+    <div class="field-group">
+      <div class="field-label">遊戲日期</div>
+      <input type="date" value="${window._sessionDate}" oninput="window._sessionDate=this.value" style="font-size:15px;">
     </div>
     <div class="field-group">
       <div class="field-label">遊戲人數</div>
@@ -406,7 +514,6 @@ function renderSetup() {
     </div>`;
 
   players.forEach((p, i) => {
-    const allZodiacs = Object.entries(ZODIAC_GROUPS).flatMap(([k,vs]) => vs.map(z => ({z,k})));
     html += `<div class="player-setup-card">
       <div class="player-setup-hd">
         <div style="display:flex;align-items:center;gap:8px;">
@@ -417,12 +524,12 @@ function renderSetup() {
       <input type="text" placeholder="姓名（可選）" value="${p.name}" oninput="updatePlayerSetup(${p.id},'name',this.value)">
       <div class="field-group">
         <div class="field-label">太陽星座（決定起點）</div>
-        <select onchange="updatePlayerSetup(${p.id},'zodiac',this.value)">
-          <option value="">— 選擇 —</option>
-          ${Object.entries(ZODIAC_GROUPS).map(([k,vs]) =>
-            vs.map(z => `<option value="${z}" ${p.zodiac===z?'selected':''}>${ZODIAC_LABEL[k]}・${z}</option>`).join('')
-          ).join('')}
-        </select>
+        <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-top:2px;">
+          ${Object.entries(ZODIAC_GROUPS).flatMap(([k,vs]) => vs.map(z => {
+            const isActive = p.zodiac === z;
+            return `<button onclick="updatePlayerSetup(${p.id},'zodiac','${isActive?'':z}');renderSetup()" style="padding:6px 2px;border:1px solid ${isActive?ZODIAC_COLOR[k]:'var(--border)'};border-radius:4px;background:${isActive?ZODIAC_COLOR[k]+'18':'transparent'};cursor:pointer;font-size:11px;color:${isActive?ZODIAC_COLOR[k]:'var(--text-muted)'};font-weight:${isActive?'600':'400'};letter-spacing:.01em;">${z}</button>`;
+          })).join('')}
+        </div>
       </div>
       <div class="field-group">
         <div class="field-label">今次帶入的議題</div>
@@ -431,7 +538,13 @@ function renderSetup() {
     </div>`;
   });
 
-  html += `<button class="start-btn" onclick="startGame()">開始記錄 →</button></div>`;
+  html += `<button class="start-btn" onclick="startGame()">開始遊戲 →</button>`;
+
+  if (hasSaved) {
+    html += `<button onclick="showHistory()" style="width:100%;padding:12px;border-radius:var(--radius);border:1px solid var(--border);background:transparent;color:var(--text-muted);font-size:14px;cursor:pointer;letter-spacing:.04em;">📂 歷史紀錄（${saved.length} 場）</button>`;
+  }
+
+  html += `</div>`;
   document.getElementById('mainContent').innerHTML = html;
 }
 
@@ -496,6 +609,8 @@ function startGame() {
   renderPlayerTabs();
   renderPhaseContent();
   showFab();
+  saveCurrentSession();
+  archiveCurrentSession();
 }
 
 // ── PLAYER TABS ──
@@ -551,12 +666,12 @@ function renderPhaseContent() {
       const active = ph === currentPhase ? 'active '+ph : '';
       const done = player.phaseDone[ph] ? 'done' : '';
       const cnt = player.phases[ph].filter(r => INFO_CELLS.includes(r.cellType)).length;
-      return `<div class="phase-chip ${active} ${done}" onclick="setPhase('${ph}')">
+      return `<div class="phase-chip ${ph} ${active} ${done}" onclick="setPhase('${ph}')">
         <div class="pc-name">${PHASE_NAMES[ph]}</div>
         <div class="pc-count">${cnt} 張訊息卡</div>
       </div>`;
     }).join('')}
-    <div class="phase-chip ${currentPhase==='blueprint'?'active blueprint':''}" onclick="setPhase('blueprint')">
+    <div class="phase-chip blueprint ${currentPhase==='blueprint'?'active blueprint':''}" onclick="setPhase('blueprint')">
       <div class="pc-name">✦ 藍圖</div>
       <div class="pc-count">答案藍圖</div>
     </div>
@@ -584,15 +699,18 @@ function renderPhaseContent() {
   // 更新 header 過關狀態
   const headerStatus = document.getElementById('headerStatus');
   if (headerStatus) {
-    if (status.canPass) {
+    if (status.blocked) {
+      headerStatus.innerHTML = '<div class="status-bar warn">🍃 還有 ' + status.pendingRelease + ' 張放下卡未執行，需先放下訊息牌才能過關</div>';
+    } else if (status.canPass) {
       headerStatus.innerHTML = '<div class="status-bar pass">✅ 已達過關條件！可繼續或進入下一關（最多9張）</div>';
     } else if (status.atLimit) {
       headerStatus.innerHTML = '<div class="status-bar limit">🔴 已達9張上限，請確認是否過關</div>';
     } else {
-      const a = `方式①：${status.infoCount}/4 張${status.has3Types?'（3種✓）':'（需含塔羅、議題、指引）'}`;
-      const b = `方式②：${status.infoCount}/7 張`;
+      const a = '方式①：' + (status.has3Types ? '塔羅✓ 議題✓ 指引✓' : '需各有1張塔羅、議題、指引');
+      const b = '方式②：' + status.infoCount + '/7 張';
       const noble = status.hasNoble ? '' : '　缺貴人卡×1';
-      headerStatus.innerHTML = '<div class="status-bar warn">🎯 ' + a + '　' + b + noble + '</div>';
+      const hint = status.releaseHint ? '　' + status.releaseHint : '';
+      headerStatus.innerHTML = '<div class="status-bar warn">🎯 ' + a + '　' + b + noble + hint + '</div>';
     }
   }
 
@@ -605,8 +723,7 @@ function renderPhaseContent() {
 
   document.getElementById('mainContent').innerHTML = html;
   updateDots();
-
-
+  updateHandBar();
 }
 
 function renderBlueprint(player) {
@@ -908,12 +1025,27 @@ function renderRoll(r, idx, phaseRounds) {
         </div>
       </div>
       ${cardField}
-      ${(()=>{ const img=getCardImg(r.cardName,r.orientation); return img?`<img class="card-img" src="${img}" alt="${r.cardName}">`:''})()}
+      ${(()=>{
+        const img = getCardImg(r.cardName, r.orientation);
+        if (!img || !r.cardName) return '';
+        const ct = CELL_TYPES.find(c=>c.key===r.cellType);
+        return `<div class="card-img-wrap">
+          <img class="card-img-thumb" src="${img}" alt="${r.cardName}">
+          <div class="card-img-info">
+            <div class="card-img-name">${r.cardName}</div>
+            ${r.orientation ? `<div class="card-img-orient">${r.orientation}</div>` : ''}
+            ${ct ? `<div class="card-img-type">${ct.label}</div>` : ''}
+          </div>
+        </div>`;
+      })()}
       <div class="field-group">
         <div class="field-label">當下感受 / 備註</div>
         <textarea placeholder="這一步的感受或觀察…" oninput="updateRoll(${r.id},'note',this.value)">${r.note}</textarea>
       </div>
       ${extraHTML}
+      <button class="roll-save-btn ${r.collapsed?'saved':''}" onclick="saveRoll(${r.id})">
+        ${r.collapsed ? '✓ 已儲存' : '儲存這一輪'}
+      </button>
     </div>
   </div>`;
 }
@@ -926,6 +1058,108 @@ function toggleRoll(id) {
     if (r) { r.collapsed = !r.collapsed; break; }
   }
   renderPhaseContent();
+}
+
+function updateHandBar() {
+  const bar = document.getElementById('handBar');
+  if (!bar) return;
+  const player = getPlayer();
+  if (!player || !gameStarted) return;
+
+  const rolls = player.phases[currentPhase].filter(r => r.collapsed && r.cellType);
+  bar.innerHTML = '<span class="hand-bar-label">手牌</span>';
+
+  rolls.forEach(r => {
+    const img = getCardImg(r.cardName, r.orientation);
+    const cls = r.cellType === 'tarot' || r.cellType === 'tarot-minor' ? 'tarot-c'
+               : r.cellType === 'issue' ? 'issue-c'
+               : r.cellType === 'guide' ? 'guide-c'
+               : r.cellType === 'noble' ? 'noble-c'
+               : r.cellType === 'destiny' ? 'destiny-c'
+               : r.cellType === 'golden' ? 'golden-c' : 'tarot-c';
+    const div = document.createElement('div');
+    div.className = 'hand-card-mini ' + cls;
+    div.title = r.cardName || r.cellType;
+    if (img) {
+      div.innerHTML = `<img src="${img}" alt="${r.cardName}">`;
+    } else {
+      div.classList.add('no-img');
+      div.textContent = (r.cardName || '').slice(0, 2) || '?';
+    }
+    // 點擊展開該輪
+    div.onclick = () => { toggleRoll(r.id); };
+    bar.appendChild(div);
+  });
+}
+
+function saveRoll(id) {
+  const player = getPlayer(); if (!player) return;
+  for (const ph of PHASES) {
+    const r = player.phases[ph].find(r => r.id === id);
+    if (r) { r.collapsed = true; break; }
+  }
+  updateHandBar();
+  const status = calcPassStatus(player, currentPhase);
+  if (status.canPass) {
+    saveCurrentSession();
+    archiveCurrentSession();
+    showPassModal(player, currentPhase, status);
+  } else {
+    // 自動新增下一輪
+    addRoll();
+  }
+}
+
+function showPassModal(player, phase, status) {
+  const PHASE_NAMES = {body:'身', mind:'心', spirit:'靈'};
+  const nextPhase = phase === 'body' ? 'mind' : phase === 'mind' ? 'spirit' : null;
+  const passWay = status.passA ? '方式①（塔羅、議題、指引各1張＋貴人）' : '方式②（7張＋貴人）';
+
+  const modal = document.createElement('div');
+  modal.id = 'passModal';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:500;display:flex;align-items:flex-end;justify-content:center;background:rgba(44,34,24,0.5);backdrop-filter:blur(4px);';
+  modal.innerHTML = `<div style="width:100%;max-width:480px;background:linear-gradient(160deg,#FDFCF9,#F7F2E8);border-radius:20px 20px 0 0;padding:28px 22px 36px;display:flex;flex-direction:column;gap:16px;">
+    <div style="width:32px;height:3px;background:var(--border);border-radius:2px;margin:0 auto 4px;"></div>
+    <div style="text-align:center;">
+      <div style="font-size:28px;margin-bottom:8px;">✨</div>
+      <div style="font-family:var(--font);font-size:18px;color:var(--text);letter-spacing:.06em;margin-bottom:6px;">「${PHASE_NAMES[phase]}」關達標</div>
+      <div style="font-size:13px;color:var(--text-muted);">${passWay}</div>
+    </div>
+    <div style="background:linear-gradient(135deg,var(--pass-bg),#E4F2EA);border-radius:8px;padding:14px 16px;font-size:13px;color:var(--pass-c);line-height:1.8;">
+      訊息卡 ${status.infoCount} 張 · 貴人卡 ${status.totalNobles} 張<br>
+      你可以繼續停留（最多累積 9 張），或進入下一關。
+    </div>
+    ${nextPhase ? `
+    <button onclick="goNextPhase('${nextPhase}')" style="width:100%;padding:14px;background:linear-gradient(135deg,#A07850,#7C5C38);border:none;border-radius:6px;color:#fff;font-size:15px;font-family:var(--font);letter-spacing:.08em;cursor:pointer;">
+      進入「${PHASE_NAMES[nextPhase]}」關 →
+    </button>` : `
+    <button onclick="goNextPhase(null)" style="width:100%;padding:14px;background:linear-gradient(135deg,#7A58A0,#5A3880);border:none;border-radius:6px;color:#fff;font-size:15px;font-family:var(--font);letter-spacing:.08em;cursor:pointer;">
+      前往答案藍圖 ✦
+    </button>`}
+    <button onclick="closePassModal()" style="width:100%;padding:12px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--text-muted);font-size:14px;cursor:pointer;letter-spacing:.04em;">
+      繼續停留在「${PHASE_NAMES[phase]}」關
+    </button>
+  </div>`;
+  document.body.appendChild(modal);
+  // 自動新增下一輪（留在這關繼續）
+  addRoll();
+}
+
+function closePassModal() {
+  const m = document.getElementById('passModal');
+  if (m) m.remove();
+}
+
+function goNextPhase(next) {
+  closePassModal();
+  if (next) {
+    // 計算貴人卡結轉
+    const player = getPlayer();
+    if (player) player.nobleCarry[next] = calcNobleCarryForward(player, currentPhase);
+    setPhase(next);
+  } else {
+    setPhase('blueprint');
+  }
 }
 
 function addRoll() {
@@ -1275,9 +1509,139 @@ async function exportZip() {
   showToast('已下載');
 }
 
+// ── LOCAL STORAGE ──
+const LS_KEY = 'sofasogood_sessions';
+const LS_CURRENT = 'sofasogood_current';
+
+function saveCurrentSession() {
+  try {
+    const data = {
+      date: window._sessionDate || new Date().toISOString().slice(0,10),
+      savedAt: Date.now(),
+      players, currentPlayerId, currentPhase, nextId
+    };
+    localStorage.setItem(LS_CURRENT, JSON.stringify(data));
+  } catch(e) {}
+}
+
+function loadCurrentSession() {
+  try {
+    const raw = localStorage.getItem(LS_CURRENT);
+    if (!raw) return false;
+    const data = JSON.parse(raw);
+    players = data.players || [];
+    currentPlayerId = data.currentPlayerId || 0;
+    currentPhase = data.currentPhase || 'body';
+    nextId = data.nextId || 1;
+    window._sessionDate = data.date || new Date().toISOString().slice(0,10);
+    return true;
+  } catch(e) { return false; }
+}
+
+function archiveCurrentSession() {
+  try {
+    const raw = localStorage.getItem(LS_CURRENT);
+    if (!raw) return;
+    const data = JSON.parse(raw);
+    const all = loadAllSessions();
+    // 用 date+savedAt 做唯一 key，避免重複
+    const id = data.date + '_' + (data.savedAt || Date.now());
+    const existing = all.findIndex(s => s.id === id);
+    if (existing >= 0) all[existing] = {...data, id};
+    else all.unshift({...data, id});
+    // 最多保留 30 場
+    localStorage.setItem(LS_KEY, JSON.stringify(all.slice(0, 30)));
+  } catch(e) {}
+}
+
+function loadAllSessions() {
+  try {
+    return JSON.parse(localStorage.getItem(LS_KEY) || '[]');
+  } catch(e) { return []; }
+}
+
+function autoSave() {
+  if (gameStarted) saveCurrentSession();
+}
+
+function showHistory() {
+  const sessions = loadAllSessions();
+  if (!sessions.length) { showToast('尚無歷史紀錄'); return; }
+
+  // 按日期分組
+  const byDate = {};
+  sessions.forEach(s => {
+    const d = s.date || '未知日期';
+    if (!byDate[d]) byDate[d] = [];
+    byDate[d].push(s);
+  });
+
+  const modal = document.createElement('div');
+  modal.id = 'historyModal';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:500;display:flex;align-items:flex-end;background:rgba(44,34,24,0.5);backdrop-filter:blur(4px);';
+
+  let rows = '';
+  Object.entries(byDate).sort((a,b) => b[0].localeCompare(a[0])).forEach(([date, sessions]) => {
+    const d = new Date(date);
+    const label = d.toLocaleDateString('zh-TW', {month:'long', day:'numeric', weekday:'short'});
+    rows += `<div style="font-size:11px;color:var(--text-dim);letter-spacing:.08em;text-transform:uppercase;padding:10px 0 6px;">${label}</div>`;
+    sessions.forEach(s => {
+      const names = (s.players||[]).map(p=>p.name||'玩家'+(p.id+1)).join('、');
+      const time = s.savedAt ? new Date(s.savedAt).toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'}) : '';
+      rows += `<div onclick="loadSession('${s.id}')" style="background:linear-gradient(160deg,#FDFCF9,#FAF7F0);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:6px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:14px;color:var(--text);margin-bottom:3px;">${names}</div>
+          <div style="font-size:11px;color:var(--text-muted);">${time} · ${(s.players||[]).length} 位玩家</div>
+        </div>
+        <span style="color:var(--text-dim);font-size:14px;">›</span>
+      </div>`;
+    });
+  });
+
+  modal.innerHTML = `<div style="width:100%;max-width:480px;background:linear-gradient(160deg,#FDFCF9,#F7F2E8);border-radius:20px 20px 0 0;padding:20px 18px 32px;max-height:80vh;display:flex;flex-direction:column;gap:0;" onclick="event.stopPropagation()">
+    <div style="width:32px;height:3px;background:var(--border);border-radius:2px;margin:0 auto 12px;"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <div style="font-family:var(--font);font-size:16px;color:var(--text);">歷史紀錄</div>
+      <button onclick="document.getElementById('historyModal').remove()" style="background:none;border:none;color:var(--text-muted);font-size:20px;cursor:pointer;">×</button>
+    </div>
+    <div style="overflow-y:auto;-webkit-overflow-scrolling:touch;flex:1;">${rows}</div>
+    <button onclick="if(confirm('確定要清除所有歷史紀錄？')){localStorage.removeItem('${LS_KEY}');localStorage.removeItem('${LS_CURRENT}');document.getElementById('historyModal').remove();showToast('已清除');}" style="margin-top:12px;width:100%;padding:10px;border-radius:var(--radius);border:1px solid var(--border);background:none;color:var(--text-dim);font-size:13px;cursor:pointer;">清除所有紀錄</button>
+  </div>`;
+  modal.onclick = () => modal.remove();
+  document.body.appendChild(modal);
+}
+
+function loadSession(id) {
+  const all = loadAllSessions();
+  const s = all.find(x => x.id === id);
+  if (!s) return;
+  players = s.players || [];
+  currentPlayerId = s.currentPlayerId || 0;
+  currentPhase = s.currentPhase || 'body';
+  nextId = s.nextId || 1;
+  window._sessionDate = s.date || '';
+  gameStarted = true;
+  document.getElementById('historyModal')?.remove();
+  renderPlayerTabs();
+  renderPhaseContent();
+  showFab();
+  showToast('已載入紀錄');
+}
+
 // ── INIT ──
-initPlayers(2);
-renderSetup();
+// 自動載入上次紀錄
+if (loadCurrentSession() && players.length > 0 && players.some(p => PHASES.some(ph => p.phases[ph].length > 0))) {
+  gameStarted = true;
+  renderPlayerTabs();
+  renderPhaseContent();
+  showFab();
+} else {
+  initPlayers(2);
+  renderSetup();
+}
+
+// 每 5 秒自動存一次
+setInterval(autoSave, 5000);
 </script>
 <' + '/body>
 <' + '/html>
