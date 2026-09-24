@@ -375,13 +375,48 @@ function nobleGiftType(r) {
 // 這一輪對手牌貢獻的訊息牌種；不是訊息牌回傳 null
 function infoTypeOf(r) {
   if (isExtraNoble(r)) { const t = nobleGiftType(r); return (INFO_CELLS.includes(t) && r.cardName) ? t : null; }
+  if (r.cellType === 'golden') return r.goldenCardType || 'golden'; // 黃金格看實際抽到的牌種
   return INFO_CELLS.includes(r.cellType) ? r.cellType : null;
 }
+// 過關保底分組：探索/真相同一組，議題一組，指引一組
+function cardGroupOf(r) {
+  const t = infoTypeOf(r);
+  if (t === 'tarot' || t === 'tarot-minor') return 'tarot';
+  if (t === 'issue' || t === 'guide') return t;
+  return null;
+}
+const GROUP_LABEL = {tarot:'探索/真相', issue:'議題', guide:'指引'};
 function isInfoRoll(r) { return infoTypeOf(r) !== null; }
 // 真正的貴人卡：只有自己踩到貴人格子才算
 function isNobleCard(r) { return r.cellType === 'noble' && !r.isExtra; }
 // 得到放下卡：放下格子，或附加貴人給的是放下卡
-function givesReleaseCard(r) { return r.cellType === 'release' || (isExtraNoble(r) && r.nobleCardType === 'release'); }
+// 附加「放下」＝執行放下（選一張手牌放掉），本身不會多一張放下卡
+function givesReleaseCard(r) { return (r.cellType === 'release' && !r.isExtra) || (isExtraNoble(r) && r.nobleCardType === 'release'); }
+function isReleaseAction(r) { return !!(r.isExtra && r.cellType === 'release'); }
+// 已被放下的牌名（可排除某一輪自己的選擇）
+function releasedNames(rolls, exceptId) {
+  const out = [];
+  rolls.forEach(r => {
+    if (isReleaseAction(r) && r.releasedCard && r.id !== exceptId) out.push(r.releasedCard);
+    (r.extras||[]).forEach(e => { if (e.type === 'release' && e.releasedCard) out.push(e.releasedCard); });
+  });
+  return out;
+}
+// 目前還在手上的訊息牌（扣掉已放下的）
+function activeInfoRolls(rolls, exceptId) {
+  const gone = releasedNames(rolls, exceptId);
+  return rolls.filter(r => isInfoRoll(r) && !(r.cardName && gone.includes(r.cardName)));
+}
+// 放下卡張數 / 已執行 / 未執行
+function releaseCounts(rolls) {
+  let cards = 0, done = 0;
+  rolls.forEach(r => {
+    if (givesReleaseCard(r)) cards++;
+    if (isReleaseAction(r) && r.releasedCard) done++;
+    (r.extras||[]).forEach(e => { if (e.type === 'release') { cards++; if (e.releasedCard) done++; } });
+  });
+  return { cards, done, pending: Math.max(0, cards - done) };
+}
 
 const CARD_OPTIONS = {
   'tarot': ['愚者','魔術師','女祭司','皇后','皇帝','教皇','戀人','戰車','力量','隱者','命運之輪','正義','倒吊人','死神','節制','惡魔','高塔','星星','月亮','太陽','審判','世界'],
@@ -442,25 +477,12 @@ let nextId = 1;
 function calcPassStatus(player, phase) {
   const rolls = player.phases[phase];
 
-  // 放下卡：主格子 release + 附加事件 release
-  const releaseCards = rolls.reduce((acc, r) => {
-    if (givesReleaseCard(r)) acc++;
-    (r.extras||[]).forEach(e => { if (e.type === 'release') acc++; });
-    return acc;
-  }, 0);
-
-  // 已放下的張數（有填 releasedCard 的附加事件）
-  const releasedDone = rolls.reduce((acc, r) => {
-    (r.extras||[]).forEach(e => { if (e.type === 'release' && e.releasedCard) acc++; });
-    return acc;
-  }, 0);
-
-  // 未執行的放下卡
-  const pendingRelease = releaseCards - releasedDone;
+  // 放下卡：放下格子、附加貴人給的放下；執行：附加「放下」選了牌
+  const { cards: releaseCards, pending: pendingRelease } = releaseCounts(rolls);
 
   // 有未執行的放下卡 → 不能過關
   if (pendingRelease > 0) {
-    const infoCards = rolls.filter(isInfoRoll);
+    const infoCards = activeInfoRolls(rolls);
     return {
       canPass: false, blocked: true, pendingRelease,
       infoCount: infoCards.length, has3Types: false, hasNoble: false,
@@ -469,14 +491,14 @@ function calcPassStatus(player, phase) {
     };
   }
 
-  const infoCards = rolls.filter(isInfoRoll);
+  const infoCards = activeInfoRolls(rolls);
   const nobles = rolls.filter(isNobleCard).length;
   const nobleCarry = player.nobleCarry[phase] || 0;
   const totalNobles = nobles + nobleCarry;
 
-  const hasTarot = infoCards.some(r => infoTypeOf(r) === 'tarot' || infoTypeOf(r) === 'tarot-minor');
-  const hasIssue = infoCards.some(r => infoTypeOf(r) === 'issue');
-  const hasGuide = infoCards.some(r => infoTypeOf(r) === 'guide');
+  const hasTarot = infoCards.some(r => cardGroupOf(r) === 'tarot');
+  const hasIssue = infoCards.some(r => cardGroupOf(r) === 'issue');
+  const hasGuide = infoCards.some(r => cardGroupOf(r) === 'guide');
   const has3Types = hasTarot && hasIssue && hasGuide;
   const infoCount = infoCards.length;
   const hasNoble  = totalNobles >= 1;
@@ -498,9 +520,9 @@ function calcPassStatus(player, phase) {
   // 放下規則：塔羅、議題、指引各需保留至少 1 張
   let releaseHint = null;
   if (!canPass && releaseCards === 0 && has3Types && hasNoble) {
-    const tarotCount = infoCards.filter(r => infoTypeOf(r)==='tarot'||infoTypeOf(r)==='tarot-minor').length;
-    const issueCount = infoCards.filter(r => infoTypeOf(r)==='issue').length;
-    const guideCount = infoCards.filter(r => infoTypeOf(r)==='guide').length;
+    const tarotCount = infoCards.filter(r => cardGroupOf(r)==='tarot').length;
+    const issueCount = infoCards.filter(r => cardGroupOf(r)==='issue').length;
+    const guideCount = infoCards.filter(r => cardGroupOf(r)==='guide').length;
     const maxDrop = Math.max(0, tarotCount-1) + Math.max(0, issueCount-1) + Math.max(0, guideCount-1);
     if (maxDrop > 0 && (infoCount - maxDrop) >= 7 && hasNoble) {
       releaseHint = `最多可放下 ${maxDrop} 張後達方式②過關`;
@@ -824,11 +846,16 @@ function savePlayerName(id) {
   showToast('名稱已更新');
 }
 
-function switchPlayer(id) {
+// 切換玩家：先記住目前玩家停在哪一關，切回來時回到那一關
+function applyPlayerSwitch(id) {
+  const prev = getPlayer();
+  if (prev) prev.lastPhase = currentPhase;
   currentPlayerId = id;
   const player = getPlayer();
-  // 找最新未完成的關卡
-  if (player) {
+  if (player && player.lastPhase) {
+    currentPhase = player.lastPhase;
+  } else if (player) {
+    // 還沒記錄過：找最新未完成的關卡
     if (!player.phaseDone['body']) currentPhase = 'body';
     else if (!player.phaseDone['mind']) currentPhase = 'mind';
     else if (!player.phaseDone['spirit']) currentPhase = 'spirit';
@@ -836,6 +863,10 @@ function switchPlayer(id) {
   } else {
     currentPhase = 'body';
   }
+}
+
+function switchPlayer(id) {
+  applyPlayerSwitch(id);
   renderPlayerTabs();
   renderPhaseContent();
   document.getElementById('scrollArea').scrollTop = 0;
@@ -947,7 +978,9 @@ function renderBlueprint(player) {
 
   PHASES.forEach(ph => {
     const phName = PHASE_NAMES[ph];
-    const rolls = player.phases[ph];
+    const allRolls = player.phases[ph];
+    const handIdsBp = new Set(activeInfoRolls(allRolls).map(r => r.id));
+    const rolls = allRolls.filter(r => !isInfoRoll(r) || handIdsBp.has(r.id));
     // 收集可選的牌
     const tarotRolls = rolls.filter(r => (r.cellType==='tarot'||r.cellType==='tarot-minor'||r.cellType==='golden'||r.cellType==='destiny') && r.cardName);
     const issueRolls = rolls.filter(r => (r.cellType==='issue'||r.cellType==='golden') && r.cardName);
@@ -1187,14 +1220,26 @@ function renderRoll(r, idx, phaseRounds) {
       if (r.cellType === 'release') {
         const player = getPlayer();
         const phRolls = player ? player.phases[currentPhase] : [];
-        const infoRolls = phRolls.filter(roll => isInfoRoll(roll) && roll.cardName && roll.collapsed && roll.id !== r.id);
-        return `<div class="rule-note release"><div class="rule-note-title">🍃 放下牌</div></div>
+        // 手上的牌（不算這一輪自己選的放下）
+        const hand = activeInfoRolls(phRolls, r.id).filter(roll => roll.cardName && roll.collapsed && roll.id !== r.id);
+        const groupCount = {};
+        hand.forEach(roll => { const g = cardGroupOf(roll); if (g) groupCount[g] = (groupCount[g]||0) + 1; });
+        // 保底：探索/真相、議題、指引各留 1 張，該組只剩 1 張就不能放
+        const canDrop = roll => { const g = cardGroupOf(roll); return !g || groupCount[g] > 1; };
+        const dropable = hand.filter(canDrop);
+        const locked = [...new Set(hand.filter(roll => !canDrop(roll)).map(cardGroupOf))];
+        const { pending } = releaseCounts(phRolls.filter(roll => roll.id !== r.id));
+        const cur = r.releasedCard && !dropable.some(roll => roll.cardName === r.releasedCard) ? r.releasedCard : '';
+        return `<div class="rule-note release"><div class="rule-note-title">🍃 放下</div>
+          <div class="rule-note-body">選一張手牌放下，執行一張放下卡${pending>0?`（目前待放下 ${pending} 張）`:'（目前沒有待執行的放下卡）'}</div></div>
           <div class="field-group"><div class="field-label">選擇要放下的牌</div>
             <select onchange="updateRoll(${r.id},'releasedCard',this.value)">
               <option value="">— 選擇 —</option>
-              ${infoRolls.map(roll=>`<option value="${roll.cardName}" ${r.releasedCard===roll.cardName?'selected':''}>${roll.cardName}（${CELL_TYPES.find(c=>c.key===infoTypeOf(roll))?.label||''}）</option>`).join('')}
-              ${infoRolls.length===0?'<option disabled>尚無可放下的牌</option>':''}
+              ${cur?`<option value="${cur}" selected disabled>${cur}（已不符合保底，請重選）</option>`:''}
+              ${dropable.map(roll=>`<option value="${roll.cardName}" ${r.releasedCard===roll.cardName?'selected':''}>${roll.cardName}（${CELL_TYPES.find(c=>c.key===infoTypeOf(roll))?.label||''}）</option>`).join('')}
+              ${dropable.length===0?'<option disabled>尚無可放下的牌</option>':''}
             </select>
+            ${locked.length?`<div style="font-size:12px;color:var(--text-muted);margin-top:6px;">${locked.map(g=>GROUP_LABEL[g]).join('、')}只剩 1 張，保底不能放下</div>`:''}
           </div>`;
       }
 
@@ -1426,41 +1471,39 @@ function renderHandPageHTML(player) {
   let html = '<div class="hand-page">';
   PHASES.forEach(ph => {
     const rolls = player.phases[ph];
+    // 所有拿過的訊息牌都顯示；已放下的變灰
     const infoRolls = rolls.filter(r => isInfoRoll(r) && r.collapsed);
+    const handIds = new Set(activeInfoRolls(rolls).map(r => r.id));
     const nobles = rolls.filter(r => isNobleCard(r) && r.collapsed);
-    const releases = rolls.filter(r => givesReleaseCard(r) && r.collapsed);
-    // 已執行放下的數量
-    const releasedDone = rolls.reduce((acc, r) => {
-      (r.extras||[]).forEach(e => { if (e.type === 'release' && e.releasedCard) acc++; });
-      return acc;
-    }, 0);
-    const pendingRelease = releases.length - releasedDone;
+    const rc = releaseCounts(rolls.filter(r => r.collapsed));
 
-    if (!infoRolls.length && !nobles.length && !releases.length) return;
+    if (!infoRolls.length && !nobles.length && !rc.cards) return;
     const phaseName = PHASE_NAMES[ph];
+    const releaseNote = rc.cards ? `　·　放下 ${rc.cards} 次（已執行 ${Math.min(rc.done, rc.cards)}）` : '';
     html += `<div>
-      <div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">${phaseName} 關</div>
+      <div style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--text-dim);margin-bottom:8px;">${phaseName} 關${releaseNote}</div>
       <div class="hand-grid">
         ${infoRolls.map(r => {
           const img = getCardImg(r.cardName, r.orientation);
           const t = infoTypeOf(r);
           const cls = t==='tarot'||t==='tarot-minor' ? 'tarot-c' : t==='issue' ? 'issue-c' : t==='guide' ? 'guide-c' : 'golden-c';
           const bgMap = {'tarot-c':'linear-gradient(160deg,#e8d4b0,#c09050)','issue-c':'linear-gradient(160deg,#b8cce8,#6090c8)','guide-c':'linear-gradient(160deg,#c8b8e0,#9870c8)','golden-c':'linear-gradient(160deg,#f0dea0,#c8a030)'};
-          return `<div class="hand-card-item" onclick="showLightbox('${img||''}','${r.cardName||''}','${r.orientation||''}')">
+          const gone = !handIds.has(r.id);
+          return `<div class="hand-card-item" style="${gone?'filter:grayscale(1);opacity:.4;':''}" onclick="showLightbox('${img||''}','${r.cardName||''}','${r.orientation||''}')">
             <div class="hand-card-img-wrap">
               ${img ? `<img src="${img}" alt="${r.cardName}">` : `<div class="hand-card-no-img" style="background:${bgMap[cls]||bgMap['tarot-c']}">${(r.cardName||'').slice(0,2)}</div>`}
             </div>
-            <div class="hand-card-name">${r.cardName||''}${r.orientation?' '+r.orientation:''}</div>
+            <div class="hand-card-name">${r.cardName||''}${r.orientation?' '+r.orientation:''}${gone?'（已放下）':''}</div>
           </div>`;
         }).join('')}
         ${nobles.map(() => `<div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
           <div style="width:100%;aspect-ratio:2/3;border-radius:4px;background:#F0EDE6;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:22px;">⚪</div>
           <div class="hand-card-name">貴人</div>
         </div>`).join('')}
-        ${Array.from({length: pendingRelease}).map(() => `<div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
-          <div style="width:100%;aspect-ratio:2/3;border-radius:4px;background:#2C2218;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:22px;">⚫</div>
-          <div class="hand-card-name">放下</div>
-        </div>`).join('')}
+        ${Array.from({length: rc.cards}).map((_, k) => { const used = k < rc.done; return `<div style="display:flex;flex-direction:column;align-items:center;gap:4px;${used?'opacity:.4;':''}">
+          <div style="width:100%;aspect-ratio:2/3;border-radius:4px;background:${used?'#9A948C':'#2C2218'};border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:22px;">⚫</div>
+          <div class="hand-card-name">${used?'放下（已執行）':'放下'}</div>
+        </div>`; }).join('')}
       </div>
     </div>`;
   });
@@ -1517,12 +1560,14 @@ function updateHandBar() {
 
   // 只顯示當前關卡的牌
   const rolls = player.phases[currentPhase] || [];
+  const handIds = new Set(activeInfoRolls(rolls).map(r => r.id));
   rolls.forEach(r => {
-      // 訊息牌
+      // 訊息牌（已放下的變灰）
       if (isInfoRoll(r) && r.cardName) {
+        const gone = !handIds.has(r.id);
         const img = getCardImg(r.cardName, r.orientation);
         const div = document.createElement('div');
-        div.style.cssText = 'flex-shrink:0;width:32px;height:50px;border-radius:3px;overflow:hidden;box-shadow:0 2px 5px rgba(124,98,72,0.22);cursor:pointer;';
+        div.style.cssText = 'flex-shrink:0;width:32px;height:50px;border-radius:3px;overflow:hidden;box-shadow:0 2px 5px rgba(124,98,72,0.22);cursor:pointer;' + (gone ? 'filter:grayscale(1);opacity:.4;' : '');
         if (img) {
           div.innerHTML = `<img src="${img}" style="width:100%;height:100%;object-fit:cover;" alt="${r.cardName}">`;
         } else {
@@ -1536,7 +1581,7 @@ function updateHandBar() {
           div.style.textAlign = 'center';
           div.textContent = (r.cardName||'').slice(0,2);
         }
-        div.title = r.cardName + (r.orientation?' '+r.orientation:'');
+        div.title = r.cardName + (r.orientation?' '+r.orientation:'') + (gone?'（已放下）':'');
         div.onclick = () => showLightbox(img, r.cardName, r.orientation);
         bar.appendChild(div);
       }
@@ -1550,15 +1595,17 @@ function updateHandBar() {
         bar.appendChild(t);
       }
 
-      // 放下 ⚫（骰到放下格 或 附加放下未執行）
-      if ((r.cellType === 'release' && !(r.isExtra && r.releasedCard)) || (isExtraNoble(r) && r.nobleCardType === 'release')) {
-        const t = document.createElement('div');
-        t.style.cssText = 'flex-shrink:0;width:32px;height:50px;border-radius:3px;background:#2C2218;display:flex;align-items:center;justify-content:center;font-size:18px;';
-        t.textContent = '⚫';
-        t.title = '放下卡（未執行）';
-        bar.appendChild(t);
-      }
   });
+  // 放下 ⚫：這關得到的每一張放下卡，已執行的變灰
+  const rc = releaseCounts(rolls);
+  for (let k = 0; k < rc.cards; k++) {
+    const used = k < rc.done;
+    const t = document.createElement('div');
+    t.style.cssText = 'flex-shrink:0;width:32px;height:50px;border-radius:3px;background:' + (used ? '#9A948C' : '#2C2218') + ';display:flex;align-items:center;justify-content:center;font-size:18px;' + (used ? 'opacity:.4;' : '');
+    t.textContent = '⚫';
+    t.title = used ? '放下卡（已執行）' : '放下卡（未執行）';
+    bar.appendChild(t);
+  }
 }
 
 function saveRoll(id) {
@@ -1932,7 +1979,7 @@ function renderDrawer() {
 }
 
 function switchPlayerDrawer(id) {
-  currentPlayerId = id;
+  applyPlayerSwitch(id);
   renderPlayerTabs();
   renderPhaseContent();
   renderDrawer();
