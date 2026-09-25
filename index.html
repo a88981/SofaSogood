@@ -433,6 +433,19 @@ function usedCarryCount(player, phase) {
   return Math.min(carry, used);
 }
 
+// 貴人／放下卡的牌面：漸層底色＋文字（used = 已執行的放下，變灰）
+const TOKEN_BG = {
+  noble:   'linear-gradient(160deg,#FFFFFF 0%,#F4F0E9 55%,#DDD5C8 100%)',
+  release: 'linear-gradient(160deg,#5A4A3C 0%,#2C2218 55%,#0E0B08 100%)',
+  used:    'linear-gradient(160deg,#C4BEB6 0%,#A39D95 55%,#86807A 100%)',
+};
+function tokenStyle(kind, used) {
+  const bg = kind === 'noble' ? TOKEN_BG.noble : used ? TOKEN_BG.used : TOKEN_BG.release;
+  const color = kind === 'noble' ? '#3C2E22' : '#fff';
+  const border = kind === 'noble' ? 'border:1.5px solid #D8CFC2;' : 'border:1.5px solid rgba(0,0,0,.25);';
+  return `background:${bg};color:${color};${border}display:flex;align-items:center;justify-content:center;font-weight:700;letter-spacing:.15em;writing-mode:vertical-rl;text-orientation:upright;`;
+}
+
 // 手牌依操作步驟排序：每一輪拿到什麼就放在那個位置
 function handItemsInOrder(rolls) {
   const handIds = new Set(activeInfoRolls(rolls).map(r => r.id));
@@ -484,20 +497,23 @@ const GUIDE_GROUPS = [
 ];
 
 const CARD_IMAGES = (()=>{
-const b='https://dnvsaoxbxb07y.cloudfront.net/card-assets';
+// 牌卡圖片放在同一個 GitHub repo（跟 index.html 同一層），同網域才能輸出成圖片
+const b='.';
 const sp=['愚者','魔術師','女祭司','皇后','皇帝','教皇','戀人','戰車','力量','隱者','命運之輪','正義','倒吊人','死神','節制','惡魔','高塔','星星','月亮','太陽','審判','世界'];
 const ex=['權杖A','權杖2','權杖3','權杖4','權杖5','權杖6','權杖7','權杖8','權杖9','權杖10','權杖侍者','權杖騎士','權杖皇后','權杖國王','聖杯A','聖杯二','聖杯三','聖杯四','聖杯五','聖杯六','聖杯七','聖杯八','聖杯九','聖杯十','聖杯侍者','聖杯騎士','聖杯皇后','聖杯國王','寶劍A','寶劍二','寶劍三','寶劍四','寶劍五','寶劍六','寶劍七','寶劍八','寶劍九','寶劍十','寶劍侍者','寶劍騎士','寶劍皇后','寶劍國王','錢幣A','錢幣2','錢幣3','錢幣4','錢幣5','錢幣6','錢幣7','錢幣8','錢幣9','錢幣10','錢幣侍者','錢幣騎士','錢幣皇后','錢幣國王'];
-const iss=[['死亡的誘惑','70_front-v20260622114943.png'],['存在感','71_front-v20260622114954.png'],['情緒勒索','72_front-v20260622114949.png'],['逃離','1.jpg'],['未來焦慮','2.jpg'],['失落','3.jpg'],['活在過去','4.jpg'],['害怕失敗','5.jpg'],['內在誠信','6.jpg'],['背叛','7.jpg'],['缺乏連結','8.jpg'],['贏','9.jpg'],['亂發脾氣','10.jpg'],['家族議題','11.jpg'],['安全感','12.jpg'],['報復心','13.jpg'],['信任感','14.jpg'],['不滿足','15.jpg'],['放棄','16.jpg'],['癮頭','17.jpg'],['控制','18.jpg'],['抗拒','19.jpg'],['渴求認同','20.jpg'],['害怕失去','21.jpg'],['完美主義','22.jpg'],['傲慢','23.jpg'],['嫉妒','24.jpg'],['壓抑','25.jpg'],['逃避','26.jpg'],['兩難','27.jpg'],['批判','28.jpg'],['自我犧牲','29.jpg'],['鑽牛角尖','30.jpg'],['小聰明投機','31.jpg'],['躊躇不前','32.jpg'],['雜音','33.jpg'],['匱乏','34.jpg'],['接納','35.jpg'],['母親關係','36.jpg'],['貪心','37.jpg'],['暗中破壞','38.jpg'],['父親關係','39.jpg'],['限制性信念','40.jpg'],['冷漠','41.jpg'],['依賴','42.jpg'],['衝動','43.jpg'],['孤立感','44.jpg'],['心碎的故事','45.jpg'],['自我封閉','46.jpg'],['突破','47.jpg'],['焦慮','48.jpg'],['耐心','49.jpg'],['拯救者','50.jpg'],['白日夢','51.jpg'],['自卑感','52.jpg'],['舊模式','53.jpg'],['受害者','54.jpg'],['自以為是','55.jpg'],['無價值感','56.jpg'],['罪惡感','57.jpg'],['得失心','58.jpg'],['公平','59.jpg'],['期望','60.jpg'],['情緒化','61.jpg'],['舊傷','62.jpg'],['我是對的','63.jpg'],['恐懼','64.jpg'],['無力感','65.jpg'],['健康','66.jpg'],['自我懷疑','67.jpg'],['人際','68.jpg'],['自我懲罰','69.jpg']];
-const gui=[['愛自己','54_front-v20260622114928.png'],['創造者','53_front-v20260622114922.png'],['感恩','55_front-v20260622114933.png'],['釋放控制','56_front-v20260622114938.png'],['活在當下','57.jpg'],['熱情','1.jpg'],['等待','2.jpg'],['好玩的人生','3.jpg'],['蛻變','4.jpg'],['冒險','5.jpg'],['歡慶','6.jpg'],['邁出下一步','7.jpg'],['要有決心','8.jpg'],['不要猶豫','9.jpg'],['展現活力','10.jpg'],['幫助他人','11.jpg'],['你是夠好的','12.jpg'],['拿回你的力量','13.jpg'],['療癒母親關係','14.jpg'],['夥伴關係','15.jpg'],['尋求寬恕','16.jpg'],['聽從直覺','17.jpg'],['保持樂觀','18.jpg'],['釋放情緒阻塞','19.jpg'],['休息','21.jpg'],['接納','22.jpg'],['不忘初心','23.jpg'],['更高層次的親密關係','24.jpg'],['進入五次元','25.jpg'],['療癒舊傷','26.jpg'],['寬恕','27.jpg'],['慢下來','28.jpg'],['蓄勢待發','29.jpg'],['關注內在','30.jpg'],['敞開對話','31.jpg'],['傾聽','32.jpg'],['學習','33.jpg'],['重新考慮','34.jpg'],['信心','35.jpg'],['新的開始','36.jpg'],['尋求幫助','37.jpg'],['奇蹟','38.jpg'],['靈魂使命','39.jpg'],['療癒父親關係','40.jpg'],['接近大自然','41.jpg'],['創意帶來財富','42.jpg'],['淨化你的空間','43.jpg'],['領袖力','44.jpg'],['謹慎規劃','45.jpg'],['調整作息','46.jpg'],['放下控制','47.jpg'],['匱乏是假象','48.jpg'],['物質享受','49.jpg'],['允許死去','50.jpg'],['內在本源力量','51.jpg'],['修復身體','52.jpg']];
+const iss=[['死亡的誘惑','70.png'],['存在感','71.png'],['情緒勒索','72.png'],['逃離','1.png'],['未來焦慮','2.png'],['失落','3.png'],['活在過去','4.png'],['害怕失敗','5.png'],['內在誠信','6.png'],['背叛','7.png'],['缺乏連結','8.png'],['贏','9.png'],['亂發脾氣','10.png'],['家族議題','11.png'],['安全感','12.png'],['報復心','13.png'],['信任感','14.png'],['不滿足','15.png'],['放棄','16.png'],['癮頭','17.png'],['控制','18.png'],['抗拒','19.png'],['渴求認同','20.png'],['害怕失去','21.png'],['完美主義','22.png'],['傲慢','23.png'],['嫉妒','24.png'],['壓抑','25.png'],['逃避','26.png'],['兩難','27.png'],['批判','28.png'],['自我犧牲','29.png'],['鑽牛角尖','30.png'],['小聰明投機','31.png'],['躊躇不前','32.png'],['雜音','33.png'],['匱乏','34.png'],['接納','35.png'],['母親關係','36.png'],['貪心','37.png'],['暗中破壞','38.png'],['父親關係','39.png'],['限制性信念','40.png'],['冷漠','41.png'],['依賴','42.png'],['衝動','43.png'],['孤立感','44.png'],['心碎的故事','45.png'],['自我封閉','46.png'],['突破','47.png'],['焦慮','48.png'],['耐心','49.png'],['拯救者','50.png'],['白日夢','51.png'],['自卑感','52.png'],['舊模式','53.png'],['受害者','54.png'],['自以為是','55.png'],['無價值感','56.png'],['罪惡感','57.png'],['得失心','58.png'],['公平','59.png'],['期望','60.png'],['情緒化','61.png'],['舊傷','62.png'],['我是對的','63.png'],['恐懼','64.png'],['無力感','65.png'],['健康','66.png'],['自我懷疑','67.png'],['人際','68.png'],['自我懲罰','69.png']];
+const gui=[['愛自己','54.png'],['創造者','53.png'],['感恩','55.png'],['釋放控制','56.png'],['活在當下','57.png'],['熱情','1.png'],['等待','2.png'],['好玩的人生','3.png'],['蛻變','4.png'],['冒險','5.png'],['歡慶','6.png'],['邁出下一步','7.png'],['要有決心','8.png'],['不要猶豫','9.png'],['展現活力','10.png'],['幫助他人','11.png'],['你是夠好的','12.png'],['拿回你的力量','13.png'],['療癒母親關係','14.png'],['夥伴關係','15.png'],['尋求寬恕','16.png'],['聽從直覺','17.png'],['保持樂觀','18.png'],['釋放情緒阻塞','19.png'],['休息','21.png'],['接納','22.png'],['不忘初心','23.png'],['更高層次的親密關係','24.png'],['進入五次元','25.png'],['療癒舊傷','26.png'],['寬恕','27.png'],['慢下來','28.png'],['蓄勢待發','29.png'],['關注內在','30.png'],['敞開對話','31.png'],['傾聽','32.png'],['學習','33.png'],['重新考慮','34.png'],['信心','35.png'],['新的開始','36.png'],['尋求幫助','37.png'],['奇蹟','38.png'],['靈魂使命','39.png'],['療癒父親關係','40.png'],['接近大自然','41.png'],['創意帶來財富','42.png'],['淨化你的空間','43.png'],['領袖力','44.png'],['謹慎規劃','45.png'],['調整作息','46.png'],['放下控制','47.png'],['匱乏是假象','48.png'],['物質享受','49.png'],['允許死去','50.png'],['內在本源力量','51.png'],['修復身體','52.png']];
 const m={};
-sp.forEach((n,i)=>m[n]={u:`${b}/spirit_cards/${i}_upright.jpg`,r:`${b}/spirit_cards/${i}_reversed.jpg`});
-ex.forEach((n,i)=>m[n]={u:`${b}/experience_cards/${i+1}_upright.jpg`,r:`${b}/experience_cards/${i+1}_reversed.jpg`});
-iss.forEach(([n,f])=>m[n]=`${b}/issue_cards/${f}`);
+sp.forEach((n,i)=>m[n]={u:`${b}/spirit_cards/${i}_upright.png`,r:`${b}/spirit_cards/${i}_reversed.png`});
+ex.forEach((n,i)=>m[n]={u:`${b}/experience_cards/${i+1}_upright.png`,r:`${b}/experience_cards/${i+1}_reversed.png`});
+iss.forEach(([n,f])=>{ m[n]=`${b}/issue_cards/${f}`; m['議題:'+n]=m[n]; });
 gui.forEach(([n,f])=>m[n]=`${b}/guildance_cards/${f}`);
 return m;
 })();
 
-function getCardImg(name, orientation) {
+// type 傳 'issue' 時優先找議題卡（「接納」同時是議題和指引的牌名）
+function getCardImg(name, orientation, type) {
+  if (type === 'issue' && CARD_IMAGES['議題:'+name]) return CARD_IMAGES['議題:'+name];
   const v = CARD_IMAGES[name];
   if (!v) return null;
   if (typeof v === 'string') return v;
@@ -535,8 +551,8 @@ function calcPassStatus(player, phase) {
 
   // 方式A：塔羅、議題、指引各至少1張（共3張）+ 貴人卡
   const passA = has3Types && hasNoble;
-  // 方式B：7張訊息卡（任意）+ 貴人卡
-  const passB = infoCount >= 7 && hasNoble;
+  // 方式B：任意 7 張訊息卡，不需要貴人卡
+  const passB = infoCount >= 7;
   // 有未執行的放下卡 → 先不能過關，但其餘條件照樣計算
   const blocked = pendingRelease > 0;
   const canPass = (passA || passB) && !blocked;
@@ -1026,9 +1042,9 @@ function renderPhaseContent() {
       // 條件都齊了，只差放下
       headerStatus.innerHTML = topRow + releaseLine;
     } else {
-      const a = '方式①：' + (status.has3Types ? '塔羅✓ 議題✓ 指引✓' : '需各有1張塔羅、議題、指引');
+      const a = '方式①：' + (status.has3Types ? '塔羅✓ 議題✓ 指引✓' : '需各有1張塔羅、議題、指引') + (status.hasNoble ? ' 貴人✓' : '＋貴人卡×1');
       const b = '方式②：' + status.infoCount + '/7 張';
-      const noble = status.hasNoble ? '' : '　缺貴人卡×1';
+      const noble = '';
       const hint = (!status.blocked && status.releaseHint) ? '　' + status.releaseHint : '';
       const limit = status.atLimit ? '<div class="status-bar limit">🔴 已達9張上限，請確認是否過關</div>' : '';
       headerStatus.innerHTML = topRow + releaseLine + '<div class="status-bar warn">🎯 ' + a + '　' + b + noble + hint + '</div>' + limit;
@@ -1093,7 +1109,7 @@ function renderBlueprint(player) {
     const isTarotMinor = tarotRolls.find(r => r.cardName===bp[ph].tarotId && cardGroupOf(r)==='tarot');
 
     const imgUrl = bp[ph].tarotId ? getCardImg(bp[ph].tarotId, bp[ph].tarotOrientation) : null;
-    const issueImg = bp[ph].issueId ? getCardImg(bp[ph].issueId, '') : null;
+    const issueImg = bp[ph].issueId ? getCardImg(bp[ph].issueId, '', 'issue') : null;
     const guideImg = bp[ph].guideId ? getCardImg(bp[ph].guideId, '') : null;
 
     html += `<div class="bp-phase-block">
@@ -1131,6 +1147,14 @@ function renderBlueprint(player) {
   <div class="field-group">
     <div class="field-label">你打算如何實踐？</div>
     <textarea rows="3" placeholder="具體行動或心態調整…" oninput="getPlayer().action=this.value">${player.action||''}</textarea>
+  </div>
+  <div class="field-group">
+    <div class="field-label">匯出</div>
+    <div class="export-btns">
+      <button class="export-btn primary" onclick="exportImage()">輸出成圖片</button>
+      <button class="export-btn" onclick="exportForAI()">複製 AI 分析文字</button>
+      <button class="export-btn" onclick="exportZip()">下載 ZIP（含照片）</button>
+    </div>
   </div>`;
 
   return html;
@@ -1144,9 +1168,21 @@ function setBlueprintCard(ph, field, val) {
   renderPhaseContent();
 }
 
+// 全場已經被拿走的牌（所有玩家、所有關卡）；被放下的牌會回到牌堆，可再被選
+function takenCardNames(exceptId) {
+  const set = new Set();
+  players.forEach(p => PHASES.forEach(ph => {
+    activeInfoRolls(p.phases[ph] || []).forEach(r => { if (r.cardName && r.id !== exceptId) set.add(r.cardName); });
+  }));
+  return set;
+}
+
 function renderInfoCardSel(rollId, cardType, curVal, curOrient, curGroup) {
+  // 防呆：別人或別輪已經拿到的牌不出現在選項裡（自己這輪已選的保留）
+  const taken = takenCardNames(rollId);
+  const avail = o => o === curVal || !taken.has(o);
   if (cardType === 'issue') {
-    const opts = CARD_OPTIONS['issue'].map(o=>`<option value="${o}" ${curVal===o?'selected':''}>${o}</option>`).join('');
+    const opts = CARD_OPTIONS['issue'].filter(avail).map(o=>`<option value="${o}" ${curVal===o?'selected':''}>${o}</option>`).join('');
     return `<div class="field-group"><div class="field-label">牌卡名稱</div>
       <select onchange="updateRoll(${rollId},'cardName',this.value)">
         <option value="">— 選擇 —</option>${opts}
@@ -1154,7 +1190,7 @@ function renderInfoCardSel(rollId, cardType, curVal, curOrient, curGroup) {
   }
 
   if (cardType === 'tarot') {
-    const opts = CARD_OPTIONS['tarot'].map(o=>`<option value="${o}" ${curVal===o?'selected':''}>${o}</option>`).join('');
+    const opts = CARD_OPTIONS['tarot'].filter(avail).map(o=>`<option value="${o}" ${curVal===o?'selected':''}>${o}</option>`).join('');
     const orientRow = `<div class="field-group"><div class="field-label">正 / 逆位</div>
       <div class="orient-btns">
         <button class="orient-btn ${curOrient==='正位'?'active':''}" onclick="updateRoll(${rollId},'orientation','${curOrient==='正位'?'':'正位'}');renderPhaseContent()">正位</button>
@@ -1178,7 +1214,7 @@ function renderInfoCardSel(rollId, cardType, curVal, curOrient, curGroup) {
     const cardSel = tg ? `<div class="field-group"><div class="field-label">牌卡名稱</div>
       <select onchange="updateRoll(${rollId},'cardName',this.value)">
         <option value="">— 選擇 —</option>
-        ${groupCards.map(c=>`<option value="${c}" ${curVal===c?'selected':''}>${c}</option>`).join('')}
+        ${groupCards.filter(avail).map(c=>`<option value="${c}" ${curVal===c?'selected':''}>${c}</option>`).join('')}
       </select></div>` : '';
     const orientRow = tg ? `<div class="field-group"><div class="field-label">正 / 逆位</div>
       <div class="orient-btns">
@@ -1200,7 +1236,7 @@ function renderInfoCardSel(rollId, cardType, curVal, curOrient, curGroup) {
     const cardSel = gg ? `<div class="field-group"><div class="field-label">牌卡名稱</div>
       <select onchange="updateRoll(${rollId},'cardName',this.value)">
         <option value="">— 選擇 —</option>
-        ${groupCards.map(c=>`<option value="${c}" ${curVal===c?'selected':''}>${c}</option>`).join('')}
+        ${groupCards.filter(avail).map(c=>`<option value="${c}" ${curVal===c?'selected':''}>${c}</option>`).join('')}
       </select></div>` : '';
     return elemRow + cardSel;
   }
@@ -1452,13 +1488,17 @@ function renderRoll(r, idx, phaseRounds) {
     </div>` : '';
 
   const isCollapsed = r.collapsed === true;
+  // 只有擲骰子的輪次才算回合，附加事件不算
+  const roundNo = (phaseRounds || []).slice(0, idx).filter(x => !x.isExtra).length;
 
   return `<div class="roll-entry ${isCollapsed?'collapsed':''} ${r.isExtra?'extra-roll':''}" id="roll-${r.id}">
     <div class="roll-header" onclick="toggleRoll(${r.id})">
       <div class="roll-meta">
-        <span class="roll-num">${r.isExtra ? '✦ 附加' : '第 '+idx+' 輪'}</span>
+        <span class="roll-num">${r.isExtra ? '✦ 附加' : '第 '+roundNo+' 輪'}</span>
         <span class="cell-badge ${badgeCls}">${badgeLabel}</span>
+        ${isExtraNoble(r) && r.nobleCardType === 'release' ? `<span class="cell-badge release">放下</span>` : ''}
         ${r.cardName ? `<span style="font-size:12px;color:var(--text-dim)">${r.cardName}${r.orientation?' '+r.orientation:''}</span>` : ''}
+        ${isReleaseAction(r) && r.releasedCard ? `<span style="font-size:12px;color:var(--text-dim)">放下：${r.releasedCard}</span>` : ''}
       </div>
       <div style="display:flex;align-items:center;gap:6px;">
         <button class="move-btn" ${idx<=1?'disabled':''} onclick="event.stopPropagation();moveRoll(${r.id},-1)" title="往上移">↑</button>
@@ -1479,7 +1519,7 @@ function renderRoll(r, idx, phaseRounds) {
       </div>
       ${cardField}
       ${(()=>{
-        const img = getCardImg(r.cardName, r.orientation);
+        const img = getCardImg(r.cardName, r.orientation, infoTypeOf(r));
         if (!img || !r.cardName) return '';
         const ct = CELL_TYPES.find(c=>c.key===r.cellType);
         return `<div class="card-img-wrap">
@@ -1568,15 +1608,15 @@ function renderHandPageHTML(player) {
       <div class="hand-grid">
         ${handItemsInOrder(rolls.filter(r => r.collapsed)).map(it => {
           if (it.kind === 'noble') return `<div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
-          <div style="width:100%;aspect-ratio:2/3;border-radius:4px;background:#F0EDE6;border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:22px;">⚪</div>
+          <div style="width:100%;aspect-ratio:2/3;border-radius:4px;${tokenStyle('noble')}font-size:18px;">貴人</div>
           <div class="hand-card-name">貴人</div>
         </div>`;
           if (it.kind === 'release') { const used = it.used; return `<div style="display:flex;flex-direction:column;align-items:center;gap:4px;${used?'opacity:.4;':''}">
-          <div style="width:100%;aspect-ratio:2/3;border-radius:4px;background:${used?'#9A948C':'#2C2218'};border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:22px;">⚫</div>
+          <div style="width:100%;aspect-ratio:2/3;border-radius:4px;${tokenStyle('release',used)}font-size:18px;">放下</div>
           <div class="hand-card-name">${used?'放下（已執行）':'放下'}</div>
         </div>`; }
           const r = it.roll, gone = it.gone;
-          const img = getCardImg(r.cardName, r.orientation);
+          const img = getCardImg(r.cardName, r.orientation, infoTypeOf(r));
           const t = infoTypeOf(r);
           const cls = t==='tarot'||t==='tarot-minor' ? 'tarot-c' : t==='issue' ? 'issue-c' : t==='guide' ? 'guide-c' : 'golden-c';
           const bgMap = {'tarot-c':'linear-gradient(160deg,#e8d4b0,#c09050)','issue-c':'linear-gradient(160deg,#b8cce8,#6090c8)','guide-c':'linear-gradient(160deg,#c8b8e0,#9870c8)','golden-c':'linear-gradient(160deg,#f0dea0,#c8a030)'};
@@ -1647,7 +1687,7 @@ function updateHandBar() {
   handItemsInOrder(rolls).forEach(it => {
     if (it.kind === 'info') {
       const r = it.roll, gone = it.gone;
-      const img = getCardImg(r.cardName, r.orientation);
+      const img = getCardImg(r.cardName, r.orientation, infoTypeOf(r));
       const div = document.createElement('div');
       div.style.cssText = 'flex-shrink:0;width:32px;height:50px;border-radius:3px;overflow:hidden;box-shadow:0 2px 5px rgba(124,98,72,0.22);cursor:pointer;' + (gone ? 'filter:grayscale(1);opacity:.4;' : '');
       if (img) {
@@ -1668,15 +1708,15 @@ function updateHandBar() {
       bar.appendChild(div);
     } else if (it.kind === 'noble') {
       const t = document.createElement('div');
-      t.style.cssText = 'flex-shrink:0;width:32px;height:50px;border-radius:3px;border:1.5px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:18px;';
-      t.textContent = '⚪';
+      t.style.cssText = 'flex-shrink:0;width:32px;height:50px;border-radius:3px;box-sizing:border-box;font-size:10px;' + tokenStyle('noble');
+      t.textContent = '貴人';
       t.title = '貴人卡';
       bar.appendChild(t);
     } else {
       const used = it.used;
       const t = document.createElement('div');
-      t.style.cssText = 'flex-shrink:0;width:32px;height:50px;border-radius:3px;background:' + (used ? '#9A948C' : '#2C2218') + ';display:flex;align-items:center;justify-content:center;font-size:18px;' + (used ? 'opacity:.4;' : '');
-      t.textContent = '⚫';
+      t.style.cssText = 'flex-shrink:0;width:32px;height:50px;border-radius:3px;box-sizing:border-box;font-size:10px;' + tokenStyle('release', used) + (used ? 'opacity:.5;' : '');
+      t.textContent = '放下';
       t.title = used ? '放下卡（已執行）' : '放下卡（未執行）';
       bar.appendChild(t);
     }
@@ -1710,7 +1750,7 @@ function saveRoll(id) {
 function showPassModal(player, phase, status) {
   const PHASE_NAMES = {body:'身', mind:'心', spirit:'靈'};
   const nextPhase = phase === 'body' ? 'mind' : phase === 'mind' ? 'spirit' : null;
-  const passWay = status.passA ? '方式①（塔羅、議題、指引各1張＋貴人）' : '方式②（7張＋貴人）';
+  const passWay = status.passA ? '方式①（塔羅、議題、指引各1張＋貴人）' : '方式②（任意 7 張訊息卡）';
 
   const modal = document.createElement('div');
   modal.id = 'passModal';
@@ -2123,13 +2163,6 @@ function renderDrawer() {
       <div class="field-label" style="margin-top:8px;margin-bottom:5px">你打算如何實踐？</div>
       <textarea rows="3" placeholder="具體行動或心態調整…" oninput="getPlayer().action=this.value">${player.action||''}</textarea>
     </div>
-    <div><div class="info-label" style="margin-bottom:8px">匯出</div>
-      <div class="export-btns">
-        <button class="export-btn primary" onclick="exportImage()">輸出成圖片</button>
-        <button class="export-btn" onclick="exportForAI()">複製 AI 分析文字</button>
-        <button class="export-btn" onclick="exportZip()">下載 ZIP（含照片）</button>
-      </div>
-    </div>
   </div>`;
 
   document.getElementById('drawerBody').querySelector('select') &&
@@ -2148,37 +2181,319 @@ function switchPlayerDrawer(id) {
 
 // ── EXPORT ──
 function exportForAI() {
-  const player = getPlayer();
-  let text = `# 《答案》桌遊遊玩紀錄\n\n**玩家**：${player.name||'玩家'+(player.id+1)}\n**議題**：${player.topic||'（未填）'}\n\n---\n\n`;
+  const player = getPlayer(); if (!player) return;
+  const text = buildAIPrompt(player);
+  const done = () => showToast('已複製 AI 提示文字');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, done));
+  } else fallbackCopy(text, done);
+}
+
+function fallbackCopy(text, done) {
+  const ta = document.createElement('textarea');
+  ta.value = text; ta.style.cssText = 'position:fixed;top:-1000px;opacity:0;';
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); done(); } catch (e) { showToast('複製失敗'); }
+  ta.remove();
+}
+
+// 產生給 AI 的引導提示
+function buildAIPrompt(player) {
+  const pName = p => p.name || '玩家' + (p.id + 1);
+  const LAYER = { body:'行動層', mind:'情感層', spirit:'靈魂層' };
+  const LAYER_DESC = {
+    body:'行動力，以及外在環境對玩家的影響',
+    mind:'情緒起伏、想法與心情的變化',
+    spirit:'內在的呼喚、靈魂使命，以及深層的擔憂',
+  };
+  const TYPE_LABEL = { tarot:'探索', 'tarot-minor':'真相', issue:'議題', guide:'指引', golden:'黃金格', noble:'貴人', release:'放下', destiny:'命運之輪', first:'第一格' };
+  const TYPE_DESC = {
+    tarot:'探索：大阿爾克納，代表心靈層面的探索，也是意識中的原型',
+    'tarot-minor':'真相：小阿爾克納，代表正在發生的事件；權杖火、聖杯水、寶劍風、錢幣土',
+    issue:'議題：玩家帶來的問題背後的心理課題，往往是卡住的原因',
+    guide:'指引：來自宇宙或內在高我的訊息，常呼應前一張牌',
+    noble:'貴人：玩家成為別人的貴人，反映他平常幫助人的方式',
+    release:'放下：主題中需要放下的部分',
+    destiny:'命運之輪：牌的歸屬由擲骰決定，不一定落在翻牌的人手上',
+    golden:'黃金格：玩家自由選擇抽哪一種牌',
+  };
+  const TYPE_ORDER = ['tarot','tarot-minor','issue','guide','noble','release','destiny','golden'];
+  const SUIT = [['權杖','火'],['聖杯','水'],['寶劍','風'],['錢幣','土']];
+  const suitOf = name => (SUIT.find(([s]) => (name||'').startsWith(s)) || null);
+  const cardText = r => r.cardName ? r.cardName + (r.orientation ? '（' + r.orientation + '）' : '') : '';
+
+  // 每關實際的步驟（排除空白輪）
+  const stepsOf = ph => player.phases[ph].filter(r => !r.fromCarry && (r.cellType || r.cardName));
+  const entered = PHASES.filter(ph => stepsOf(ph).length || player.phases[ph].some(r => r.fromCarry && r.cardName));
+  const others = players.filter(p => p.id !== player.id).map(pName);
+
+  // 已放下的牌（名稱 → 何時放下）
+  const releasedInfo = {};
   PHASES.forEach(ph => {
-    const rolls = player.phases[ph];
-    const status = calcPassStatus(player, ph);
-    text += `## ${PHASE_NAMES[ph]} 關（${status.infoCount} 張訊息卡）\n\n`;
-    if (!rolls.length) { text += '（無記錄）\n\n'; return; }
-    rolls.forEach((r,i) => {
-      const ct = CELL_TYPES.find(c=>c.key===r.cellType);
-      text += `### 第 ${i+1} 輪\n`;
-      text += `- 格子：${ct?ct.label:'—'}\n`;
-      if (r.cardName) text += `- 牌卡：${r.cardName}${r.orientation?' ('+r.orientation+')':''}\n`;
-      if (r.note) text += `- 感受：${r.note}\n`;
-      text += '\n';
+    let round = 0;
+    player.phases[ph].forEach(r => {
+      if (!r.fromCarry && !r.isExtra && r.cellType) round++;
+      if (isReleaseAction(r) && r.releasedCard) releasedInfo[r.releasedCard] = { ph, round, note: r.note || '' };
     });
   });
-  text += `---\n\n## 答案藍圖\n\n`;
-  if (player.blueprint) {
-    PHASES.forEach(ph => {
-      const bp = player.blueprint[ph] || {};
-      const parts = [];
-      if (bp.tarotId) parts.push(`塔羅 ${bp.tarotId}${bp.tarotOrientation?' '+bp.tarotOrientation:''}`);
-      if (bp.issueId) parts.push(`議題 ${bp.issueId}`);
-      if (bp.guideId) parts.push(`指引 ${bp.guideId}`);
-      text += `**${PHASE_NAMES[ph]}**：${parts.join('、')||'未完成'}\n`;
+
+  // 本局出現的類型
+  const seen = new Set();
+  entered.forEach(ph => player.phases[ph].forEach(r => {
+    if (r.fromCarry) { if (r.cardName) seen.add(r.cellType); return; }
+    if (!r.cellType) return;
+    // 附加貴人是「受到幫助」，不列入貴人（成為別人的貴人）的說明
+    if (r.cellType !== 'first' && !isExtraNoble(r)) seen.add(r.cellType);
+    const t = infoTypeOf(r); if (t && t !== 'golden') seen.add(t);
+  }));
+
+  // 進度文字
+  const progress = PHASES.map(ph => {
+    if (!entered.includes(ph)) return `未進入${PHASE_NAMES[ph]}關`;
+    if (player.phaseDone[ph]) return `完成${PHASE_NAMES[ph]}關` + (player.stayPhase === ph ? '（過關後繼續抽牌中）' : '');
+    const rounds = stepsOf(ph).filter(r => !r.isExtra).length;
+    return `${PHASE_NAMES[ph]}關進行中（第 ${rounds} 輪）`;
+  }).join('；');
+
+  // 藍圖
+  const bp = player.blueprint || {};
+  const bpPhases = PHASES.filter(ph => { const b = bp[ph] || {}; return b.tarotId || b.issueId || b.guideId; });
+  const hasBlueprint = bpPhases.length > 0;
+  const drawnOrientation = (ph, name) => { const r = player.phases[ph].find(x => x.cardName === name); return r ? r.orientation || '' : ''; };
+  const bpTarot = ph => {
+    const b = bp[ph] || {}; if (!b.tarotId) return '—';
+    const o = b.tarotOrientation || '';
+    const drawn = drawnOrientation(ph, b.tarotId);
+    const diff = drawn && o && drawn !== o ? `〔抽到時為${drawn}〕` : '';
+    return b.tarotId + (o ? '（' + o + '）' : '') + diff;
+  };
+
+  let t = '';
+  t += `你是《答案》桌遊的引導者，不是解答者。
+這個遊戲相信答案已經存在於玩家心中，你的任務是幫他看見，而不是告訴他。
+- 你可以說明牌卡的象徵，指出紀錄中的模式與呼應
+- 你不替他下結論，不告訴他「你需要的是什麼」「你應該怎麼做」
+- 你用提問把他帶回自己身上，讓他自己說出答案
+
+## 遊戲背景
+
+《答案》分為身、心、靈三關，依序推進。每關收集訊息卡（探索、真相、議題、指引）才能過關。三關結束後，玩家從每關選出塔羅、議題、指引各一張，組成「答案藍圖」。
+
+本局玩家實際進入的關卡如下，未進入的關卡不列出：
+`;
+  entered.forEach(ph => { t += `- ${PHASE_NAMES[ph]}（${LAYER[ph]}）：${LAYER_DESC[ph]}\n`; });
+  t += `\n本局出現的格子與牌卡：\n`;
+  TYPE_ORDER.filter(k => seen.has(k)).forEach(k => { t += `- ${TYPE_DESC[k]}\n`; });
+
+  t += `
+## 本局資訊
+- 玩家：${pName(player)}
+- 議題：${player.topic || '（未填）'}
+- 日期：${window._sessionDate || new Date().toISOString().slice(0,10)}
+- 進度：${progress}
+- 答案藍圖：${hasBlueprint ? '已完成' : '未製作'}
+`;
+  if (others.length) t += `- 同局玩家：${others.join('、')}\n`;
+
+  t += `
+## 遊玩紀錄
+
+標記說明：
+- 「第 N 輪」是擲骰停下的格子；「✦ 附加」是擲骰以外的事件，不算回合
+- 「〔已放下〕」表示這張牌後來被放下，不計入過關
+- 「—」表示該格不抽牌或未填寫感受，不代表玩家沒有感受
+`;
+
+  const notedCards = [];
+  const allCardsSeq = []; // 依順序的有效牌
+  let lastAction = null;
+  entered.forEach(ph => {
+    const rolls = player.phases[ph];
+    const st = calcPassStatus(player, ph);
+    const rc = releaseCounts(rolls);
+    const handIds = new Set(activeInfoRolls(rolls).map(r => r.id));
+    t += `\n### ${PHASE_NAMES[ph]}關〔${player.phaseDone[ph] ? '已過關' : '進行中'}〕｜有效訊息卡 ${st.infoCount} 張${rc.cards ? `｜放下 ${rc.cards} 次` : ''}\n`;
+    const carryIn = player.nobleCarry[ph] || 0;
+    if (carryIn) {
+      const used = rolls.filter(r => r.fromCarry && r.cardName && r.carryIndex < carryIn);
+      const list = used.map(r => `${cardText(r)}（${TYPE_LABEL[r.cellType]}）${handIds.has(r.id) ? '' : '〔已放下〕'}`);
+      const keep = carryIn - used.length;
+      if (keep > 0) list.push(`${keep} 張保留為貴人卡`);
+      t += `帶入貴人卡 ${carryIn} 張，換成：${list.join('、')}\n`;
+      used.forEach(r => { if (handIds.has(r.id)) allCardsSeq.push({ r, ph }); });
+    }
+    t += '\n';
+    let round = 0;
+    rolls.forEach(r => {
+      if (r.fromCarry || !(r.cellType || r.cardName)) return;
+      const gone = isInfoRoll(r) && r.cardName && !handIds.has(r.id);
+      const tag = gone ? '〔已放下〕' : '';
+      const suit = infoTypeOf(r) === 'tarot-minor' || (r.cellType === 'tarot-minor') ? suitOf(r.cardName) : null;
+      const suitTag = suit ? `〔${suit[0]}・${suit[1]}〕` : '';
+      const where = r.isExtra ? `${PHASE_NAMES[ph]}關附加事件` : `${PHASE_NAMES[ph]}關第 ${round + 1} 輪`;
+      let line;
+      if (r.isExtra) {
+        if (isExtraNoble(r)) {
+          const who = r.noblePerson ? `由 ${r.noblePerson} 幫助，` : '受到其他玩家幫助，';
+          line = r.nobleCardType === 'release' ? `✦ 附加 貴人｜${who}得到一張放下卡`
+               : `✦ 附加 貴人｜${who}得到${r.cardName && TYPE_LABEL[infoTypeOf(r)] ? ' ' + TYPE_LABEL[infoTypeOf(r)] : ''} ${cardText(r) || '—'}${suitTag}${tag}`;
+        } else if (isReleaseAction(r)) {
+          line = `✦ 附加 放下｜放下了 ${r.releasedCard || '—'}`;
+        } else if (r.cellType === 'destiny') {
+          line = `✦ 附加 命運之輪｜得到${r.cardName && TYPE_LABEL[infoTypeOf(r)] ? ' ' + TYPE_LABEL[infoTypeOf(r)] : ''} ${cardText(r) || '—'}${suitTag}${tag}`;
+        } else {
+          const tp = infoTypeOf(r);
+          line = `✦ 附加 ${TYPE_LABEL[r.cellType] || '—'}｜${cardText(r) || '—'}${tp && tp !== r.cellType && TYPE_LABEL[tp] ? '（' + TYPE_LABEL[tp] + '）' : ''}${suitTag}${tag}`;
+        }
+        t += line + '\n';
+        if (r.note) t += `  感受：${r.note}\n`;
+      } else {
+        round++;
+        let cell = TYPE_LABEL[r.cellType] || '—';
+        if (r.cellType === 'golden' && r.goldenCardType && TYPE_LABEL[r.goldenCardType]) cell += `（${TYPE_LABEL[r.goldenCardType]}）`;
+        line = `第 ${round} 輪｜${cell}｜${cardText(r) || '—'}${suitTag}${tag}`;
+        t += line + '\n';
+        t += `  感受：${r.note || '—'}\n`;
+      }
+      if (r.cardName && r.note && isInfoRoll(r)) notedCards.push(`${cardText(r)}｜${where}｜${r.note}`);
+      if (isInfoRoll(r) && r.cardName && handIds.has(r.id)) allCardsSeq.push({ r, ph });
+      lastAction = r;
     });
+    if (player.stayPhase === ph) t += '過關後玩家選擇留在本關繼續抽牌\n';
+  });
+
+  if (hasBlueprint) {
+    t += `\n## 答案藍圖\n| 關卡 | 塔羅 | 議題 | 指引 |\n|---|---|---|---|\n`;
+    bpPhases.forEach(ph => { const b = bp[ph]; t += `| ${PHASE_NAMES[ph]} | ${bpTarot(ph)} | ${b.issueId || '—'} | ${b.guideId || '—'} |\n`; });
+    t += '\n';
+    if (player.insight) t += `玩家寫下的核心啟發：${player.insight}\n`;
+    if (player.action) t += `玩家寫下的實踐方式：${player.action}\n`;
   }
-  if (player.insight) text += `\n## 核心啟發\n\n${player.insight}\n`;
-  if (player.action) text += `\n## 實踐計畫\n\n${player.action}\n`;
-  text += `\n---\n\n請根據以上《答案》桌遊完整紀錄，依身（行動層）、心（情感層）、靈（靈魂層）三個維度整合解讀，對照議題「${player.topic||'（未填）'}」給出洞察與建議。`;
-  navigator.clipboard.writeText(text).then(()=>showToast('已複製！'));
+
+  // 提問錨點
+  t += `\n## 提問錨點\n以下由紀錄整理，供你判斷這局的脈絡重心：\n\n`;
+  if (hasBlueprint) {
+    const nine = bpPhases.flatMap(ph => { const b = bp[ph]; return [b.tarotId ? bpTarot(ph) : null, b.issueId, b.guideId].filter(Boolean).map(c => `${PHASE_NAMES[ph]}：${c}`); });
+    t += `- 藍圖中他選的牌：${nine.join('、')}\n`;
+    if (player.insight || player.action) t += `- 他寫下的核心啟發與實踐：${player.insight || '—'}／${player.action || '—'}\n`;
+  }
+  if (notedCards.length) t += `- 他寫了感受的牌：\n${notedCards.map(x => '  - ' + x).join('\n')}\n`;
+
+  // 重複出現的模式
+  const patterns = [];
+  entered.forEach(ph => {
+    const seq = stepsOf(ph).filter(r => !r.isExtra && r.cellType);
+    let k = 0;
+    while (k < seq.length) {
+      let j = k; while (j + 1 < seq.length && seq[j + 1].cellType === seq[k].cellType) j++;
+      if (j - k + 1 >= 2 && seq[k].cellType !== 'first') patterns.push(`${PHASE_NAMES[ph]}關連續 ${j - k + 1} 輪停在${TYPE_LABEL[seq[k].cellType]}`);
+      k = j + 1;
+    }
+  });
+  const allInfo = entered.flatMap(ph => player.phases[ph].filter(r => isInfoRoll(r) && r.cardName));
+  SUIT.forEach(([s]) => { const n = allInfo.filter(r => r.cardName.startsWith(s)).length; if (n >= 3) patterns.push(`${s}牌組出現 ${n} 次`); });
+  const rev = allInfo.filter(r => r.orientation === '逆位').length;
+  if (rev >= 3) patterns.push(`逆位 ${rev} 張`);
+  if (patterns.length) t += `- 重複出現的模式：${patterns.join('／')}\n`;
+
+  const relList = Object.entries(releasedInfo).map(([name, v]) => {
+    const r = allInfo.find(x => x.cardName === name);
+    const o = r && r.orientation ? '（' + r.orientation + '）' : '';
+    const felt = (r && r.note) || v.note ? '有寫下感受' : '未寫感受';
+    return `${name}${o}｜${PHASE_NAMES[v.ph]}關第 ${v.round} 輪後放下｜${felt}`;
+  });
+  if (relList.length) t += `- 放下的牌：\n${relList.map(x => '  - ' + x).join('\n')}\n`;
+
+  let end;
+  if (hasBlueprint) end = '藍圖與核心啟發';
+  else {
+    const lastPh = entered[entered.length - 1];
+    const last = allCardsSeq.filter(x => x.ph === lastPh).slice(-2).map(x => cardText(x.r));
+    end = lastPh ? `最後進入的關卡為${PHASE_NAMES[lastPh]}關${last.length ? '，最後的有效牌：' + last.join('、') : ''}` : '—';
+  }
+  if (lastAction && isReleaseAction(lastAction)) end += '（本局以放下作結）';
+  t += `\n- 脈絡終點：${end}\n`;
+
+  t += `
+## 解讀原則
+1. 只解讀玩家實際走過的內容。
+   - 未進入的關卡：完全不提及，不推測、不預告，也不給「進入下一關時可留意」之類的話
+   - 進入但未過關的關卡：視為進行中的狀態，不解讀成卡住、失敗或阻礙
+   - 停在哪裡本身不代表任何意義，可能只是遊戲時間的安排
+2. 塔羅依一般象徵說明。議題卡與指引卡是本遊戲專屬牌卡，請依牌名字面與前後文理解，不要假裝知道官方牌義。
+3. 說明牌義時用開放的語氣，提供可能的方向，不作斷定。
+   可以：「審判常與重新評估、被召喚有關，逆位時有時是還沒準備好回應」
+   避免：「審判逆位代表你在逃避改變」
+4. 留意順序與模式：指引與前一張牌的呼應、同一格重複出現、同一牌組連續出現、正逆位的變化。
+5. 放下的牌和保留的牌可以一起看，但不要預設放下有特別的意義。
+   有些玩家放下一張牌，只是對它沒有感受。
+   除非他對這張牌寫了感受，或它和脈絡重心明顯相關，否則只當作紀錄的一部分，不另外解讀，也不暗示迴避。
+6. 貴人事件反映他與他人的互動方式，可連結到議題本身。
+7. 藍圖中塔羅的正逆位由玩家自選，若與抽到時不同，可以指出這一點。
+8. 玩家寫下的感受、核心啟發與實踐方式是主體。引用時只做映照與連結，不詮釋他的動機。
+9. 始終回扣議題。語氣平穩，避免宿命論、絕對斷言與空泛的鼓勵語。
+
+## 輸出格式
+
+`;
+  const allDone = PHASES.every(ph => player.phaseDone[ph]);
+  const bodyOnly = entered.length === 1 && entered[0] === 'body';
+  if (allDone && hasBlueprint) {
+    t += `1. 各關的牌卡與走向：每關點出關鍵牌與事件，用開放語氣說明象徵（每關 150–250 字）
+2. 三關的整體脈絡：從身到心到靈，紀錄中呈現的變化
+3. 收束
+`;
+  } else if (bodyOnly && calcPassStatus(player, 'body').infoCount < 3) {
+    t += `1. 這幾張牌的象徵，以及它們之間的關係（精簡即可，不需要湊滿篇幅）
+2. 收束
+`;
+  } else {
+    t += `1. 已走過關卡的牌卡與走向（每關 150–250 字）
+2. 收束
+`;
+  }
+
+  t += `
+## 收束
+
+### 這局浮現的主題
+用一句話（30 字內）點出這局牌卡共同浮現的主題。
+這是觀察，不是結論，也不是給他的建議。
+
+### 留給你的問題
+
+先依「提問錨點」判斷這局的脈絡重心，也就是對他最有份量的那張牌或那個模式。
+判斷順序：
+1. 藍圖中他選的牌，以及核心啟發提到的內容
+2. 他寫了感受的牌
+3. 重複出現的模式
+4. 脈絡終點
+
+放下的牌只有在他寫了感受，或與重心明顯相關時，才作為提問素材。
+
+接著提出 3 個問題，順序固定：
+1. 看見：從脈絡重心出發，先用一句話說明這張牌的象徵，再請他說出在生活中的對應，或這張牌對他的意義
+2. 連結：把重心與紀錄中的另一條線索放在一起（前後呼應的牌、重複的模式、有意義的放下、脈絡終點），請他說出他看見了什麼
+3. 改變：從整局出發，請他說出自己想做的改變
+
+提問規則：
+- 每題都要扣住本局實際出現的牌或事件，帶入牌名
+- 開放式提問，不能用是非題回答
+- 不提供選項，避免「是 A 還是 B」「A 或 B」的句式
+- 不在問題裡預先描述他可能的感受或答案，也不藏答案在問題裡
+- 只使用他實際走過的關卡與事件
+- 若他寫了實踐方式，第 3 題請他把自己的想法說得更具體，而不是另給方向
+
+最後用一句話邀請他寫下自己的回答，不再補充建議。
+
+## 若玩家回覆
+玩家可能會在對話中回答這些問題。這時：
+- 映照他說的話，幫他整理與聚焦
+- 若他的回答還很模糊，再追問一題，同樣遵守上面的提問規則
+- 他說出的改變就是答案；你只協助他把它變得可行，例如什麼時候開始、第一步是什麼
+- 不要用你的建議取代他的答案
+`;
+  return t;
 }
 
 async function exportZip() {
@@ -2355,7 +2670,8 @@ function loadCardImage(url) {
     img.onload = () => finish(img);
     img.onerror = () => finish(null);
     setTimeout(() => finish(null), 8000);
-    img.src = url;
+    // 加參數避開瀏覽器快取：畫面上顯示牌卡時留下的快取不帶跨網域許可，直接沿用會讀不進圖片
+    img.src = url + (url.includes('?') ? '&' : '?') + 'export=1';
   });
 }
 
@@ -2397,9 +2713,12 @@ async function exportImage() {
   // 預先載入牌卡圖片
   const imgMap = new Map();
   await Promise.all(sections.flatMap(s => s.items.filter(it => it.kind === 'info').map(async it => {
-    const url = getCardImg(it.roll.cardName, it.roll.orientation);
+    const url = getCardImg(it.roll.cardName, it.roll.orientation, infoTypeOf(it.roll));
     imgMap.set(it.roll.id, await loadCardImage(url));
   })));
+
+  const imgTotal = imgMap.size;
+  const imgFailed = [...imgMap.values()].filter(v => !v).length;
 
   const bp = player.blueprint || {};
   const bpRows = PHASES.map(ph => {
@@ -2458,11 +2777,16 @@ async function exportImage() {
             wrapText(ctx, it.roll.cardName, CW - 24).slice(0, 4).forEach((l, k, arr) => ctx.fillText(l, x + CW / 2, cy + CH / 2 + (k - (arr.length - 1) / 2) * 34));
           }
         } else if (it.kind === 'noble') {
-          ctx.fillStyle = '#F0EDE6'; ctx.fillRect(x, cy, CW, CH);
-          ctx.beginPath(); ctx.arc(x + CW / 2, cy + CH / 2, 34, 0, Math.PI * 2); ctx.fillStyle = '#fff'; ctx.fill(); ctx.strokeStyle = '#D8CFC2'; ctx.lineWidth = 3; ctx.stroke();
+          const g = ctx.createLinearGradient(x, cy, x + CW * 0.6, cy + CH);
+          g.addColorStop(0, '#FFFFFF'); g.addColorStop(0.55, '#F4F0E9'); g.addColorStop(1, '#DDD5C8');
+          ctx.fillStyle = g; ctx.fillRect(x, cy, CW, CH);
+          ctx.font = `700 38px ${FONT}`; ctx.fillStyle = '#3C2E22'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('貴', x + CW / 2, cy + CH / 2 - 24); ctx.fillText('人', x + CW / 2, cy + CH / 2 + 24);
         } else {
-          ctx.fillStyle = it.used ? '#9A948C' : '#2C2218'; ctx.fillRect(x, cy, CW, CH);
-          ctx.beginPath(); ctx.arc(x + CW / 2, cy + CH / 2, 34, 0, Math.PI * 2); ctx.fillStyle = '#111'; ctx.fill();
+          const g = ctx.createLinearGradient(x, cy, x + CW * 0.6, cy + CH);
+          if (it.used) { g.addColorStop(0, '#C4BEB6'); g.addColorStop(0.55, '#A39D95'); g.addColorStop(1, '#86807A'); }
+          else { g.addColorStop(0, '#5A4A3C'); g.addColorStop(0.55, '#2C2218'); g.addColorStop(1, '#0E0B08'); }
+          ctx.fillStyle = g; ctx.fillRect(x, cy, CW, CH);
+          ctx.font = `700 38px ${FONT}`; ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('放', x + CW / 2, cy + CH / 2 - 24); ctx.fillText('下', x + CW / 2, cy + CH / 2 + 24);
         }
         ctx.restore();
         roundRectPath(ctx, x, cy, CW, CH, 10); ctx.strokeStyle = '#E0D6C6'; ctx.lineWidth = 2; ctx.stroke();
@@ -2510,10 +2834,10 @@ async function exportImage() {
   try { dataUrl = canvas.toDataURL('image/png'); }
   catch (e) { showToast('圖片產生失敗'); return; }
   const fileName = `答案_${pName}_${window._sessionDate || ''}.png`.replace(/[\\/:*?"<>|\s]/g, '');
-  showImagePreview(dataUrl, fileName, canvas);
+  showImagePreview(dataUrl, fileName, canvas, imgTotal && imgFailed ? `有 ${imgFailed}/${imgTotal} 張牌面圖片讀不到，已改用色塊顯示` : '');
 }
 
-function showImagePreview(dataUrl, fileName, canvas) {
+function showImagePreview(dataUrl, fileName, canvas, warn) {
   const old = document.getElementById('imgExport'); if (old) old.remove();
   const m = document.createElement('div');
   m.id = 'imgExport';
@@ -2527,6 +2851,7 @@ function showImagePreview(dataUrl, fileName, canvas) {
     <div id="imgScroll" style="flex:1;min-height:0;width:100%;overflow:auto;-webkit-overflow-scrolling:touch;text-align:center;">
       <img id="imgExportPic" src="${dataUrl}" alt="${fileName}" style="width:100%;max-width:560px;height:auto;border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,.35);">
     </div>
+    ${warn ? `<div style="font-size:12px;color:#F2B8A8;">⚠️ ${warn}</div>` : ''}
     <div style="font-size:12px;color:#E8DCC8;">點圖片可放大／縮小，長按可存到相簿</div>
     <div style="display:flex;gap:8px;width:100%;max-width:560px;">
       ${canShare ? `<button id="imgShareBtn" style="flex:1;padding:13px;border:none;border-radius:8px;background:linear-gradient(135deg,#A07850,#7C5C38);color:#fff;font-size:14px;cursor:pointer;">分享</button>` : ''}
