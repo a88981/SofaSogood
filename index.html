@@ -2362,6 +2362,57 @@ function buildAIPrompt(player) {
     if (player.stayPhase === ph) t += '過關後玩家選擇留在本關繼續抽牌\n';
   });
 
+  // 步驟走向：每關的起、轉、合
+  const stepLabel = (r, n) => {
+    const where = r.isExtra ? '✦ 附加' : `第 ${n} 輪`;
+    let what;
+    if (isExtraNoble(r)) what = r.nobleCardType === 'release' ? '受到幫助，得到放下卡' : `受到幫助，得到 ${cardText(r) || '—'}`;
+    else if (isReleaseAction(r)) what = `放下 ${r.releasedCard || '—'}`;
+    else {
+      const tp = infoTypeOf(r);
+      let cell = TYPE_LABEL[r.cellType] || '—';
+      if (r.cellType === 'golden' && tp && TYPE_LABEL[tp]) cell += `（${TYPE_LABEL[tp]}）`;
+      if (r.isExtra && r.cellType === 'destiny' && tp && TYPE_LABEL[tp]) cell += `（${TYPE_LABEL[tp]}）`;
+      what = cell + (r.cardName ? ' ' + cardText(r) : '');
+    }
+    return `${where} ${what}`;
+  };
+  let flow = '';
+  entered.forEach(ph => {
+    let n = 0;
+    const seq = [];
+    player.phases[ph].forEach(r => {
+      if (r.fromCarry || !(r.cellType || r.cardName)) return;
+      if (!r.isExtra) n++;
+      if (r.cellType === 'first') return;
+      seq.push({ r, n });
+    });
+    if (!seq.length) return;
+    const first = seq[0];
+    const last = seq[seq.length - 1];
+    // 轉折：放下、命運之輪、貴人、受助，以及塔羅正逆位的變化
+    const turns = [];
+    let prevOri = '';
+    seq.forEach((x, k) => {
+      const r = x.r;
+      if (k > 0 && k < seq.length - 1 || (k > 0 && seq.length <= 2)) {
+        if (isReleaseAction(r) || r.cellType === 'release' || r.cellType === 'destiny' || r.cellType === 'noble' || isExtraNoble(r)) turns.push(stepLabel(r, x.n));
+      }
+      const g = cardGroupOf(r);
+      if (g === 'tarot' && r.orientation) {
+        if (prevOri && prevOri !== r.orientation) turns.push(`${stepLabel(r, x.n)}（塔羅由${prevOri}轉為${r.orientation}）`);
+        prevOri = r.orientation;
+      }
+    });
+    const carryUsed = player.phases[ph].filter(r => r.fromCarry && r.cardName);
+    flow += `\n### ${PHASE_NAMES[ph]}關\n`;
+    if (carryUsed.length) flow += `- 帶入：以上一關的貴人卡換得 ${carryUsed.map(cardText).join('、')}\n`;
+    flow += `- 起：${stepLabel(first.r, first.n)}\n`;
+    if (turns.length) flow += `- 轉：${[...new Set(turns)].join('／')}\n`;
+    if (last !== first) flow += `- 合：${stepLabel(last.r, last.n)}${player.phaseDone[ph] ? '（過關前的最後一步）' : '（目前的最後一步）'}\n`;
+  });
+  if (flow) t += `\n## 步驟走向\n以下依步驟順序整理每關的起、轉、合，「承」請從遊玩紀錄中的其餘步驟看出發展：\n` + flow;
+
   if (hasBlueprint) {
     t += `\n## 答案藍圖\n| 關卡 | 塔羅 | 議題 | 指引 |\n|---|---|---|---|\n`;
     bpPhases.forEach(ph => { const b = bp[ph]; t += `| ${PHASE_NAMES[ph]} | ${bpTarot(ph)} | ${b.issueId || '—'} | ${b.guideId || '—'} |\n`; });
@@ -2432,6 +2483,22 @@ function buildAIPrompt(player) {
 7. 藍圖中塔羅的正逆位由玩家自選，若與抽到時不同，可以指出這一點。
 8. 玩家寫下的感受、核心啟發與實踐方式是主體。引用時只做映照與連結，不詮釋他的動機。
 9. 始終回扣議題。語氣平穩，避免宿命論、絕對斷言與空泛的鼓勵語。
+10. 把每一關的步驟當成一段起承轉合來讀：
+   - 起：這關從哪裡開始。第一步停在什麼格子、拿到什麼牌，常能看出這關切入議題的方式
+   - 承：接下來的牌如何延續或回應開頭
+   - 轉：放下、命運之輪、貴人、受到幫助、正逆位的變化，可能是這關的轉折
+   - 合：過關前的最後一步，這關怎麼收尾
+   起的位置可參考以下方向，用開放語氣提出，不作斷定：
+   - 起於議題：一開始就碰到核心課題，這關可能從直面卡住的地方出發
+   - 起於探索：從內在的探索與原型出發
+   - 起於真相：從正在發生的事件切入
+   - 起於指引：還沒遇到課題就先得到方向
+   - 起於貴人：先從幫助別人開始，可以看看這和他在議題中如何給出、如何付出有沒有關係
+   - 起於放下：一開始就面對需要放下的部分
+   - 起於命運之輪：開局的走向交給外在與他人
+   - 起於黃金格：一開始就能自己選擇要看見什麼
+   - 起於受到幫助：這關從接受他人的支持開始
+   轉與合同樣只提出可能的意義，不預設哪一種走向比較好。
 
 ## 輸出格式
 
@@ -2439,16 +2506,16 @@ function buildAIPrompt(player) {
   const allDone = PHASES.every(ph => player.phaseDone[ph]);
   const bodyOnly = entered.length === 1 && entered[0] === 'body';
   if (allDone && hasBlueprint) {
-    t += `1. 各關的牌卡與走向：每關點出關鍵牌與事件，用開放語氣說明象徵（每關 150–250 字）
+    t += `1. 各關的起承轉合：依步驟順序說明這關怎麼開始、如何發展、在哪裡轉折、如何收尾，並點出關鍵牌的象徵（每關 200–300 字）
 2. 三關的整體脈絡：從身到心到靈，紀錄中呈現的變化
 3. 收束
 `;
   } else if (bodyOnly && calcPassStatus(player, 'body').infoCount < 3) {
-    t += `1. 這幾張牌的象徵，以及它們之間的關係（精簡即可，不需要湊滿篇幅）
+    t += `1. 這幾張牌的象徵、出現的先後順序，以及它們之間的關係（精簡即可，不需要湊滿篇幅）
 2. 收束
 `;
   } else {
-    t += `1. 已走過關卡的牌卡與走向（每關 150–250 字）
+    t += `1. 已走過關卡的起承轉合：依步驟順序說明怎麼開始、如何發展、在哪裡轉折、如何收尾（每關 200–300 字）
 2. 收束
 `;
   }
