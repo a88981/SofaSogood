@@ -206,6 +206,15 @@ textarea{resize:none;line-height:1.5;min-height:60px;}
 .tab-dot.show{display:none!important;}
 
 /* DRAWER */
+.rules-panel{width:100%;max-width:560px;max-height:82vh;display:flex;flex-direction:column;background:linear-gradient(180deg,#FAF8F2 0%,#FDFCF9 40%);border-radius:14px 14px 0 0;padding-bottom:env(safe-area-inset-bottom,0px);}
+.rules-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px 10px;font-size:16px;font-weight:600;color:var(--text);}
+.rules-close{width:30px;height:30px;border-radius:50%;border:1px solid var(--border);background:transparent;color:var(--text-muted);font-size:18px;cursor:pointer;line-height:1;}
+.rules-body{overflow:auto;padding:4px 20px 20px;display:flex;flex-direction:column;gap:16px;-webkit-overflow-scrolling:touch;}
+.rules-title{font-size:12px;letter-spacing:.1em;color:var(--text-dim);margin-bottom:6px;}
+.rule-row{display:flex;gap:12px;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;color:var(--text);line-height:1.5;}
+.rule-row:last-child{border-bottom:none;}
+.rule-name{flex-shrink:0;width:64px;font-weight:600;color:var(--text-muted);}
+.rules-note{font-size:13px;color:var(--text-muted);line-height:1.7;margin-top:4px;}
 .drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:200;opacity:0;pointer-events:none;transition:opacity .25s;}
 .drawer-overlay.open{opacity:1;pointer-events:all;}
 .drawer{position:fixed;bottom:0;left:0;right:0;background:linear-gradient(180deg,#FAF8F2 0%,#FDFCF9 40%);border-radius:14px 14px 0 0;z-index:201;transform:translateY(100%);transition:transform .3s cubic-bezier(.32,.72,0,1);max-height:90vh;display:flex;flex-direction:column;}
@@ -336,8 +345,8 @@ input[type="file"]{display:none;}
 </div>
 <div class="tab-bar" id="tabBar">
   <div id="playerTabsBar" style="display:contents;"></div>
-  <button class="tab" id="tab-overview" onclick="openDrawer()">
-    <span class="tab-icon">📋</span><span class="tab-label">總覽</span>
+  <button class="tab" id="tab-rules" onclick="showRules()">
+    <span class="tab-icon">📖</span><span class="tab-label">規則</span>
   </button>
 </div>
 
@@ -2979,6 +2988,53 @@ function showImagePreview(dataUrl, fileName, canvas, warn) {
       }
     }, 'image/png');
   };
+}
+
+// ── 遊戲規則（簡版）──
+function showRules() {
+  const old = document.getElementById('rulesSheet'); if (old) { old.remove(); return; }
+  const m = document.createElement('div');
+  m.id = 'rulesSheet';
+  m.style.cssText = 'position:fixed;inset:0;z-index:10002;background:rgba(44,34,24,0.45);display:flex;align-items:flex-end;justify-content:center;';
+  m.onclick = e => { if (e.target === m) m.remove(); };
+  const row = (name, text) => `<div class="rule-row"><span class="rule-name">${name}</span><span>${text}</span></div>`;
+  m.innerHTML = `
+  <div class="rules-panel">
+    <div class="rules-head">
+      <span>📖 遊戲規則</span>
+      <button onclick="document.getElementById('rulesSheet').remove()" class="rules-close">×</button>
+    </div>
+    <div class="rules-body">
+      <div class="rules-sec">
+        <div class="rules-title">三個關卡</div>
+        ${row('身', '行動力，以及外在環境的影響')}
+        ${row('心', '情緒、想法與心情的變化')}
+        ${row('靈', '內在的呼喚與深層的擔憂')}
+      </div>
+      <div class="rules-sec">
+        <div class="rules-title">格子</div>
+        ${row('探索', '抽大牌塔羅')}
+        ${row('真相', '擲骰選牌組（1 權杖 2 聖杯 3 寶劍 4 錢幣），抽小牌')}
+        ${row('議題', '抽議題卡：卡住你的心理課題')}
+        ${row('指引', '抽指引卡：給你的方向')}
+        ${row('貴人', '你成為別人的貴人，幫他抽一張牌')}
+        ${row('放下', '選一張手上的牌放回牌組')}
+        ${row('命運之輪', '抽一張牌，大家擲骰，最大的人拿走')}
+        ${row('黃金格', '經過或停下，自選牌種抽一張')}
+      </div>
+      <div class="rules-sec">
+        <div class="rules-title">過關</div>
+        ${row('方式①', '探索或真相、議題、指引都有，共 4 張以上＋貴人卡')}
+        ${row('方式②', '任意 7 張訊息卡')}
+        <div class="rules-note">放下卡要全部執行完才能過關。多的貴人卡帶到下一關，可換一張訊息卡。過關後可以繼續抽，最多 9 張。</div>
+      </div>
+      <div class="rules-sec">
+        <div class="rules-title">答案藍圖</div>
+        <div class="rules-note">三關結束後，每關選塔羅、議題、指引各一張，組成 9 張的答案藍圖，塔羅正逆位可自己決定。</div>
+      </div>
+    </div>
+  </div>`;
+  document.body.appendChild(m);
 }
 </script>
 <' + '/body>
