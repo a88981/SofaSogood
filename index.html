@@ -1622,7 +1622,7 @@ function renderHandPageHTML(player) {
           const bgMap = {'tarot-c':'linear-gradient(160deg,#e8d4b0,#c09050)','issue-c':'linear-gradient(160deg,#b8cce8,#6090c8)','guide-c':'linear-gradient(160deg,#c8b8e0,#9870c8)','golden-c':'linear-gradient(160deg,#f0dea0,#c8a030)'};
           return `<div class="hand-card-item" style="${gone?'filter:grayscale(1);opacity:.4;':''}" onclick="showLightbox('${img||''}','${r.cardName||''}','${r.orientation||''}')">
             <div class="hand-card-img-wrap">
-              ${img ? `<img src="${img}" alt="${r.cardName}">` : `<div class="hand-card-no-img" style="background:${bgMap[cls]||bgMap['tarot-c']}">${(r.cardName||'').slice(0,2)}</div>`}
+              ${img ? `<img src="${img}" alt="${r.cardName}" loading="lazy" decoding="async">` : `<div class="hand-card-no-img" style="background:${bgMap[cls]||bgMap['tarot-c']}">${(r.cardName||'').slice(0,2)}</div>`}
             </div>
             <div class="hand-card-name">${r.cardName||''}${r.orientation?' '+r.orientation:''}${gone?'（已放下）':''}</div>
           </div>`;
@@ -1691,7 +1691,7 @@ function updateHandBar() {
       const div = document.createElement('div');
       div.style.cssText = 'flex-shrink:0;width:32px;height:50px;border-radius:3px;overflow:hidden;box-shadow:0 2px 5px rgba(124,98,72,0.22);cursor:pointer;' + (gone ? 'filter:grayscale(1);opacity:.4;' : '');
       if (img) {
-        div.innerHTML = `<img src="${img}" style="width:100%;height:100%;object-fit:cover;" alt="${r.cardName}">`;
+        div.innerHTML = `<img src="${img}" style="width:100%;height:100%;object-fit:cover;" alt="${r.cardName}" decoding="async">`;
       } else {
         const bg = infoTypeOf(r)==='issue'?'#8090c0':infoTypeOf(r)==='guide'?'#9070c0':'#c0a060';
         div.style.background = bg;
@@ -2660,19 +2660,26 @@ setInterval(autoSave, 5000);
 })();
 
 // ── 輸出成圖片 ──
+// 同網域的圖片直接用瀏覽器快取（畫面上已經載過的不用重抓）；
+// 只有跨網域的圖才需要 crossOrigin 與避開快取
+const _imgCache = new Map();
 function loadCardImage(url) {
-  return new Promise(resolve => {
-    if (!url) return resolve(null);
+  if (!url) return Promise.resolve(null);
+  if (_imgCache.has(url)) return _imgCache.get(url);
+  const p = new Promise(resolve => {
     const img = new Image();
-    img.crossOrigin = 'anonymous'; // 需要圖床允許跨網域才能畫進圖片；失敗就改畫色塊
+    let abs; try { abs = new URL(url, location.href); } catch (e) { abs = null; }
+    const cross = abs && abs.origin !== location.origin;
     let done = false;
-    const finish = v => { if (!done) { done = true; resolve(v); } };
+    const finish = v => { if (!done) { done = true; if (!v) _imgCache.delete(url); resolve(v); } };
     img.onload = () => finish(img);
     img.onerror = () => finish(null);
-    setTimeout(() => finish(null), 8000);
-    // 加參數避開瀏覽器快取：畫面上顯示牌卡時留下的快取不帶跨網域許可，直接沿用會讀不進圖片
-    img.src = url + (url.includes('?') ? '&' : '?') + 'export=1';
+    setTimeout(() => finish(null), 6000);
+    if (cross) { img.crossOrigin = 'anonymous'; img.src = url + (url.includes('?') ? '&' : '?') + 'export=1'; }
+    else img.src = url;
   });
+  _imgCache.set(url, p);
+  return p;
 }
 
 function wrapText(ctx, text, maxW) {
@@ -2756,49 +2763,71 @@ async function exportImage() {
       const meta = `${st.infoCount} 張訊息卡${player.phaseDone[sec.ph] ? ' · 已過關 ✓' : ''}${rc.cards ? ` · 放下 ${rc.cards} 次` : ''}`;
       text(meta, PAD + 110, y + 10, 24, '#8C7B6A', 400);
       y += 64;
-      sec.items.forEach((it, i) => {
-        const col = i % COLS, row = Math.floor(i / COLS);
-        const x = PAD + col * (CW + GAP), cy = y + row * (CH + 88);
-        if (!draw) return;
-        ctx.save();
-        const faded = (it.kind === 'info' && it.gone) || (it.kind === 'release' && it.used);
-        if (faded) ctx.globalAlpha = 0.38;
-        roundRectPath(ctx, x, cy, CW, CH, 10); ctx.save(); ctx.clip();
-        if (it.kind === 'info') {
-          const img = imgMap.get(it.roll.id);
-          if (img) {
-            ctx.drawImage(img, x, cy, CW, CH);
-            if (it.gone) { ctx.globalCompositeOperation = 'saturation'; ctx.fillStyle = '#888'; ctx.fillRect(x, cy, CW, CH); }
-          } else {
-            const [c1, c2] = TYPE_BG[infoTypeOf(it.roll)] || TYPE_BG.tarot;
-            const g = ctx.createLinearGradient(x, cy, x + CW, cy + CH); g.addColorStop(0, it.gone ? '#ddd' : c1); g.addColorStop(1, it.gone ? '#aaa' : c2);
-            ctx.fillStyle = g; ctx.fillRect(x, cy, CW, CH);
-            ctx.font = `600 26px ${FONT}`; ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            wrapText(ctx, it.roll.cardName, CW - 24).slice(0, 4).forEach((l, k, arr) => ctx.fillText(l, x + CW / 2, cy + CH / 2 + (k - (arr.length - 1) / 2) * 34));
-          }
-        } else if (it.kind === 'noble') {
-          const g = ctx.createLinearGradient(x, cy, x + CW * 0.6, cy + CH);
-          g.addColorStop(0, '#FFFFFF'); g.addColorStop(0.55, '#F4F0E9'); g.addColorStop(1, '#DDD5C8');
-          ctx.fillStyle = g; ctx.fillRect(x, cy, CW, CH);
-          ctx.font = `700 38px ${FONT}`; ctx.fillStyle = '#3C2E22'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('貴', x + CW / 2, cy + CH / 2 - 24); ctx.fillText('人', x + CW / 2, cy + CH / 2 + 24);
-        } else {
-          const g = ctx.createLinearGradient(x, cy, x + CW * 0.6, cy + CH);
-          if (it.used) { g.addColorStop(0, '#C4BEB6'); g.addColorStop(0.55, '#A39D95'); g.addColorStop(1, '#86807A'); }
-          else { g.addColorStop(0, '#5A4A3C'); g.addColorStop(0.55, '#2C2218'); g.addColorStop(1, '#0E0B08'); }
-          ctx.fillStyle = g; ctx.fillRect(x, cy, CW, CH);
-          ctx.font = `700 38px ${FONT}`; ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('放', x + CW / 2, cy + CH / 2 - 24); ctx.fillText('下', x + CW / 2, cy + CH / 2 + 24);
-        }
-        ctx.restore();
-        roundRectPath(ctx, x, cy, CW, CH, 10); ctx.strokeStyle = '#E0D6C6'; ctx.lineWidth = 2; ctx.stroke();
-        // 牌名
-        const label = it.kind === 'info' ? it.roll.cardName + (it.roll.orientation ? ' ' + it.roll.orientation : '') + (it.gone ? '（已放下）' : '')
-          : it.kind === 'noble' ? '貴人' : (it.used ? '放下（已執行）' : '放下');
-        ctx.font = `400 22px ${FONT}`; ctx.fillStyle = '#5C4A38'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-        wrapText(ctx, label, CW + 10).slice(0, 2).forEach((l, k) => ctx.fillText(l, x + CW / 2, cy + CH + 10 + k * 28));
-        ctx.restore();
+      // 排版：依順序由左到右排，放不下就換行；牌面保持原本比例，指引卡放大
+      const GW = CW * 2 + GAP;        // 指引卡寬度
+      const MAXW = W - PAD * 2;
+      const LABEL_H = 88;
+      const boxes = sec.items.map(it => {
+        const img = it.kind === 'info' ? imgMap.get(it.roll.id) : null;
+        const w = it.kind === 'info' && infoTypeOf(it.roll) === 'guide' ? GW : CW;
+        const h = img && img.naturalWidth ? Math.round(w * img.naturalHeight / img.naturalWidth) : Math.round(w * 1.5);
+        return { it, img, w, h };
       });
-      const rows = Math.ceil(sec.items.length / COLS);
-      y += rows * (CH + 88) + 24;
+      const rowsOut = []; let cur = [], curW = 0;
+      boxes.forEach(bx => {
+        const need = (cur.length ? GAP : 0) + bx.w;
+        if (cur.length && curW + need > MAXW) { rowsOut.push(cur); cur = []; curW = 0; }
+        curW += (cur.length ? GAP : 0) + bx.w; cur.push(bx);
+      });
+      if (cur.length) rowsOut.push(cur);
+
+      rowsOut.forEach(row => {
+        const rowH = Math.max(...row.map(bx => bx.h));
+        let x = PAD;
+        row.forEach(bx => {
+          const { it, img, w: bw, h: bh } = bx;
+          const cy = y;
+          if (draw) {
+            ctx.save();
+            const faded = (it.kind === 'info' && it.gone) || (it.kind === 'release' && it.used);
+            if (faded) ctx.globalAlpha = 0.38;
+            roundRectPath(ctx, x, cy, bw, bh, 10); ctx.save(); ctx.clip();
+            if (it.kind === 'info') {
+              if (img) {
+                ctx.drawImage(img, x, cy, bw, bh);
+                if (it.gone) { ctx.globalCompositeOperation = 'saturation'; ctx.fillStyle = '#888'; ctx.fillRect(x, cy, bw, bh); }
+              } else {
+                const [c1, c2] = TYPE_BG[infoTypeOf(it.roll)] || TYPE_BG.tarot;
+                const g = ctx.createLinearGradient(x, cy, x + bw, cy + bh); g.addColorStop(0, it.gone ? '#ddd' : c1); g.addColorStop(1, it.gone ? '#aaa' : c2);
+                ctx.fillStyle = g; ctx.fillRect(x, cy, bw, bh);
+                ctx.font = `600 26px ${FONT}`; ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                wrapText(ctx, it.roll.cardName, bw - 24).slice(0, 4).forEach((l, k, arr) => ctx.fillText(l, x + bw / 2, cy + bh / 2 + (k - (arr.length - 1) / 2) * 34));
+              }
+            } else if (it.kind === 'noble') {
+              const g = ctx.createLinearGradient(x, cy, x + bw * 0.6, cy + bh);
+              g.addColorStop(0, '#FFFFFF'); g.addColorStop(0.55, '#F4F0E9'); g.addColorStop(1, '#DDD5C8');
+              ctx.fillStyle = g; ctx.fillRect(x, cy, bw, bh);
+              ctx.font = `700 38px ${FONT}`; ctx.fillStyle = '#3C2E22'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('貴', x + bw / 2, cy + bh / 2 - 24); ctx.fillText('人', x + bw / 2, cy + bh / 2 + 24);
+            } else {
+              const g = ctx.createLinearGradient(x, cy, x + bw * 0.6, cy + bh);
+              if (it.used) { g.addColorStop(0, '#C4BEB6'); g.addColorStop(0.55, '#A39D95'); g.addColorStop(1, '#86807A'); }
+              else { g.addColorStop(0, '#5A4A3C'); g.addColorStop(0.55, '#2C2218'); g.addColorStop(1, '#0E0B08'); }
+              ctx.fillStyle = g; ctx.fillRect(x, cy, bw, bh);
+              ctx.font = `700 38px ${FONT}`; ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('放', x + bw / 2, cy + bh / 2 - 24); ctx.fillText('下', x + bw / 2, cy + bh / 2 + 24);
+            }
+            ctx.restore();
+            roundRectPath(ctx, x, cy, bw, bh, 10); ctx.strokeStyle = '#E0D6C6'; ctx.lineWidth = 2; ctx.stroke();
+            const label = it.kind === 'info' ? it.roll.cardName + (it.roll.orientation ? ' ' + it.roll.orientation : '') + (it.gone ? '（已放下）' : '')
+              : it.kind === 'noble' ? '貴人' : (it.used ? '放下（已執行）' : '放下');
+            ctx.font = `400 22px ${FONT}`; ctx.fillStyle = '#5C4A38'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+            wrapText(ctx, label, bw + 10).slice(0, 2).forEach((l, k) => ctx.fillText(l, x + bw / 2, cy + bh + 10 + k * 28));
+            ctx.restore();
+          }
+          x += bw + GAP;
+        });
+        y += rowH + LABEL_H;
+      });
+      y += 24;
     });
 
     if (bpRows.length) {
